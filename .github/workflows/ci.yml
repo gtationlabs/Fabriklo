@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # Local Supabase CLI defaults (public, non-secret, local-only values).
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      SUPABASE_DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Unit tests
+        run: npm test
+      - name: Dependency audit (high+)
+        run: npm audit --audit-level=high --omit=dev
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.122.0
+      - name: Start local Supabase
+        run: supabase start -x studio,imgproxy,vector,logflare,realtime,edge-runtime,supavisor,mailpit,postgres-meta
+      - name: Export local keys
+        run: |
+          supabase status -o env > .supabase-status.env
+          echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$(grep '^PUBLISHABLE_KEY=' .supabase-status.env | cut -d= -f2- | tr -d '\"')" >> "$GITHUB_ENV"
+          echo "SUPABASE_SECRET_KEY=$(grep '^SECRET_KEY=' .supabase-status.env | cut -d= -f2- | tr -d '\"')" >> "$GITHUB_ENV"
+          rm .supabase-status.env
+      - name: Database lint
+        run: supabase db lint --level warning --fail-on error
+      - name: Database RLS + concurrency tests
+        run: npm run test:db
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Build
+        run: npm run build
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      - name: E2E (desktop + mobile, axe)
+        run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7

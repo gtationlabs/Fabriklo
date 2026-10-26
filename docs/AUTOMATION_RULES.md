@@ -1,0 +1,3 @@
+# Automation rules (design; not built yet)
+
+Rules are data (`trigger → conditions → action`), never user code. Triggers: order placed, payment verified, COD awaiting verification, packed, delivered, failed delivery, return requested, cart abandoned, low stock, back in stock, signup, try-on completed/failed, weekly summary. Actions: email, compliant SMS, approved WhatsApp template, dashboard alert, signed webhook to an **allow-listed** host (SSRF-safe), review task. Every execution has an idempotency key derived from (rule, event), retries with backoff, a dead-letter state, per-channel quotas, consent/suppression checks and dry-run mode.
