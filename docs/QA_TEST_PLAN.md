@@ -20,10 +20,16 @@ Status legend: ✅ automated and passing · 🟡 partial · ⏳ not built yet.
 | Inventory | 25 concurrent last-unit reservations; expiry exactly once | ✅ | `tests/db/inventory-concurrency.test.ts` |
 | Ledgers | Movements/audit cannot be edited or deleted | ✅ | db |
 | Storage | Try-on photos owner-only; product-media write needs permission | ✅ | db |
-| Accessibility | axe (WCAG 2.2 AA tags) on home, desktop + mobile | 🟡 | e2e (more pages to add) |
+| Accessibility | axe (WCAG 2.2 AA tags) on home (desktop + mobile) and checkout | 🟡 | e2e (more pages to add) |
 | Headers | CSP/nosniff/no x-powered-by | ✅ | e2e |
 | Hero tour | Forward/reverse scroll, skip, reduced motion, screenshots | ⏳ | hero milestone |
-| Orders/COD | Create order, state machine, tracking token | ⏳ | order milestone |
+| Orders/COD | Server quote, zone fee + free threshold, COD limit, stale-total rejection, draft/oversold rejection, phone/district validation | ✅ | `tests/db/orders.test.ts` |
+| Orders/COD | Idempotent replay returns same order without double stock; cancel/return restocks exactly once | ✅ | db |
+| Orders/COD | State machine: pack before pickup, cash only after delivery, `paid` never settable for COD, permissions + MFA per field | ✅ | db |
+| Orders/COD | 10 concurrent checkouts for the last unit → exactly 1 order, stock 0 | ✅ | `tests/db/checkout-concurrency.test.ts` |
+| Orders/COD | Tracking needs order number + HMAC token; output minimised (first name, masked phone, district) | ✅ | db + e2e |
+| Orders/COD | Guest checkout → success → tracking → staff fulfil → cash collected → customer sees Delivered | ✅ | `tests/e2e/checkout.spec.ts` |
+| Risk | Third order from one phone in 24h flags review and blocks fulfilment until approved; reject cancels + restocks | ✅ | db |
 | Payments | SSLCOMMERZ IPN replay/mismatch/invalid | ⏳ | payment milestone |
 | AI try-on | Upload validation, consent, quotas, deletion | ⏳ | try-on milestone |
 | Load | k6 checkout + worker scripts | ⏳ | QA milestone |

@@ -142,4 +142,9 @@ insert into public.site_settings (key, value, is_public) values
   ('store.identity', '{"name": "Fabriklo", "tagline": "Considered clothing for everyday Dhaka", "currency": "BDT", "locale": "en-BD"}', true),
   ('store.contact', '{"email": "hello@example.com", "phone": "+8801700000000", "note": "Placeholder contact details (demo)"}', true),
   ('checkout.cod', '{"enabled": true, "max_order_minor": 2000000}', false);
+
+-- Demo shipping zones. Fees are placeholders: staff set real rates in admin.
+insert into public.shipping_zones (code, name, districts, is_fallback, fee_minor, free_over_minor, cod_enabled, estimate_min_days, estimate_max_days, position) values
+  ('inside-dhaka', 'Inside Dhaka (demo rate)', array['Dhaka'], false, 7000, 500000, true, 1, 2, 1),
+  ('outside-dhaka', 'Outside Dhaka (demo rate)', '{}', true, 13000, 800000, true, 2, 5, 2);
 drop table if exists seed_products;

@@ -36,17 +36,13 @@ export default async function CartPage() {
             <p className="mt-4 text-xs text-muted">
               Prices and stock are checked again on our server when you place the order.
             </p>
-            <button
-              type="button"
-              disabled
-              aria-describedby="checkout-soon"
-              className="mt-6 w-full cursor-not-allowed rounded bg-espresso/60 px-5 py-3 font-medium text-cream"
+            <Link
+              href="/checkout"
+              className="mt-6 block w-full rounded bg-espresso px-5 py-3 text-center font-medium text-cream hover:bg-charcoal"
             >
               Checkout
-            </button>
-            <p id="checkout-soon" className="mt-2 text-xs text-muted">
-              Checkout with cash on delivery arrives in the next milestone.
-            </p>
+            </Link>
+            <p className="mt-2 text-xs text-muted">Cash on delivery across Bangladesh.</p>
           </aside>
         </div>
       )}

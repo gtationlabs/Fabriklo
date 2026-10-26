@@ -114,3 +114,10 @@ export async function oneVariant(where: string): Promise<{ id: string; product_i
   if (!rows[0]) throw new Error(`no variant for ${where}`);
   return rows[0];
 }
+
+/** Switches the acting role mid-transaction (e.g. customer checks out, then staff fulfils). */
+export async function switchActor(sql: Sql, actor: Actor) {
+  await sql.query("reset role");
+  await sql.query(`select set_config('request.jwt.claims', $1, true)`, [JSON.stringify(claimsFor(actor))]);
+  await sql.query(`set local role ${actor.role}`);
+}

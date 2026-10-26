@@ -1,6 +1,6 @@
 # Implementation status
 
-_Last updated: 2026-10-26 · Milestone: foundation + vertical slice 1_
+_Last updated: 2026-10-26 · Milestone: foundation, slice 1 (catalog/admin), slice 2 (orders + cash on delivery)_
 
 This file is the honest source of truth for what exists. It does **not** claim production readiness.
 
@@ -19,21 +19,22 @@ The repository contained only a README. The client supplied five 2D store render
 | Store renders | Verified order 01–05 matches spec; converted to responsive WebP (768/1280/1728 + blur) | `docs/3D_TOUR_ASSETS.md` |
 | Storefront | Home (static first scene + sections), shop/men/women/category/collection/search with URL filters + pagination, product page with colour/size/SKU availability, guest cart page, cart & products APIs | E2E desktop + mobile, axe |
 | Admin | Staff login (throttled, generic errors), mandatory TOTP enrolment/verification, role-filtered console, overview KPIs from real data, product list/create/edit/publish/archive, variants with private cost, stock adjustments (reasoned, idempotent, audited), inventory alerts + ledger | E2E full slice |
-| Tests | 15 unit · 39 DB/RLS/concurrency · 17 Playwright | all passing locally |
+| Orders + COD (slice 2) | Migration 0008: shipping zones, 64 districts, server quote, idempotent `create_order` with atomic stock commit + snapshots, HMAC tracking tokens, state machine with guards, restock on cancel/return, manual shipments, explainable risk rules, pg_cron reservation expiry. Checkout page (BD address, phone normalisation, COD), order success with private tracking link, `/orders/track`. Admin orders list (views + search), order detail (timeline, transitions, courier entry, internal notes, flag), risk review queue | 16 order DB tests + 1 concurrency test + 3 E2E |
+| Tests | 28 unit · 55 DB/RLS/concurrency · 20 Playwright | all passing locally |
 
 ### Routes working now
 
-Storefront: `/`, `/shop`, `/men`, `/women`, `/category/[slug]`, `/collections/[slug]`, `/search`, `/product/[slug]`, `/cart`
-Admin: `/admin/login`, `/admin/mfa`, `/admin`, `/admin/products`, `/admin/products/new`, `/admin/products/[id]`, `/admin/inventory`
-API: `GET /api/products`, `GET /api/cart`, `POST|PATCH|DELETE /api/cart/items`
+Storefront: `/`, `/shop`, `/men`, `/women`, `/category/[slug]`, `/collections/[slug]`, `/search`, `/product/[slug]`, `/cart`, `/checkout`, `/order/success`, `/orders/track`
+Admin: `/admin/login`, `/admin/mfa`, `/admin`, `/admin/products`, `/admin/products/new`, `/admin/products/[id]`, `/admin/inventory`, `/admin/orders`, `/admin/orders/[id]`, `/admin/risk`
+API: `GET /api/products`, `GET /api/cart`, `POST|PATCH|DELETE /api/cart/items`, `POST /api/checkout/quote`, `POST /api/checkout/orders`
 
 ## Mock vs live
 
-There are **no** live third-party integrations yet. No payment, courier, SMS, email or AI provider is called anywhere. Nothing is presented as live.
+There are **no** live third-party integrations yet. No payment, courier, SMS, email or AI provider is called anywhere. Nothing is presented as live. Cash on delivery needs no provider; courier details are typed in by staff.
 
 ## Next milestones (in order)
 
-1. **Orders + COD** — `create_order` RPC (quote, reserve, snapshot, idempotency), checkout page, order success + signed tracking token, admin order list/detail with split statuses and state-machine tests, reservation-expiry worker, basic risk flags.
+1. ~~Orders + COD~~ done in slice 2.
 2. **Store tour** — GSAP ScrollTrigger 2.5D sequence over the 5 renders, reverse scroll, skip, reduced-motion/static fallback, mobile tour, screenshot tests, admin hero-scene editor with preview/rollback.
 3. CMS pages + theme versions; customer accounts (sign-up/in, addresses, order history).
 4. SSLCOMMERZ sandbox, courier adapters (manual first).
@@ -43,7 +44,10 @@ There are **no** live third-party integrations yet. No payment, courier, SMS, em
 
 ## Launch blockers (must be cleared before production)
 
-- Checkout/orders, payment verification and reservation-expiry worker not built.
+- Online payment (SSLCOMMERZ) and its verification not built; COD only.
+- Shipping zone fees and the COD limit are **demo values**: the owner must set real rates (admin settings UI for zones is a later milestone; today they're edited in the database).
+- No order confirmation SMS/email: customers rely on the private tracking link shown after checkout.
+- Order rate limit is per-instance in memory (8 orders / 10 min / IP); add edge limits + Turnstile before launch.
 - CSP still permits inline scripts; rate limiting is single-instance in-memory; no Turnstile/WAF yet.
 - No error monitoring; no backup/restore drill performed.
 - Forced global sign-out on staff role change not implemented (role changes do take effect immediately in the DB).
