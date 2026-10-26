@@ -50,5 +50,9 @@ Status legend: ✅ automated and passing · 🟡 partial · ⏳ not built yet.
 | Couriers | Webhook HMAC verification, batch parsing; `courier_apply_event` dedupes, enforces transitions, auto-fulfils on hand-over, stores unknown tracking/unmapped statuses unapplied | ✅ | unit + db |
 | Couriers | Unconfigured couriers and `manual` answer 404 | ✅ | e2e |
 | Couriers | Real Pathao/Steadfast/RedX payloads and signatures | ⏳ | needs merchant accounts |
-| AI try-on | Upload validation, consent, quotas, deletion | ⏳ | try-on milestone |
+| AI try-on | Photo type sniffed by content; SVG/EXE refused; EXIF removed; resized ≤ 864×1296; tiny/odd/huge files refused; provider selection (mock never silently in production); FASHN request shape (base64 in/out), error classification, status polling | ✅ | `tests/unit/tryon.test.ts` |
+| AI try-on | Sign-in, consent version, owned photo (exists in storage, caller's folder), supported product, one in flight, per-customer quota, site switch, credit cap; customers cannot update jobs or see others' jobs/consents | ✅ | `tests/db/tryon.test.ts` |
+| AI try-on | Worker: claim once (SKIP LOCKED), event dedupe, complete only into owner's folder, ledger charged, append-only ledgers; bounded retries; expiry list/mark/purge with trace; staff stats without paths, MFA required, limits range-checked; garment attach enables product | ✅ | db |
+| AI try-on | Browser (demo mock): guest must sign in; unsupported product has no panel; upload → consent gate → result → before/after → history → delete (objects + row gone, trace kept); stored input has no EXIF; anonymous cannot fetch outputs; other customer gets 404; admin page shows mock label + limits save; worker route 404 without secret | ✅ | `tests/e2e/tryon.spec.ts` |
+| AI try-on | Real FASHN run (key, real garment photo, pose/moderation errors) | ⏳ | needs owner's FASHN key |
 | Load | k6 checkout + worker scripts | ⏳ | QA milestone |

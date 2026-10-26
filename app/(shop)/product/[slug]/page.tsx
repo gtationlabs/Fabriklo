@@ -5,6 +5,10 @@ import { DemoBadge } from "@/components/ui/demo-badge";
 import { ProductArt } from "@/components/shop/product-art";
 import { ProductCard } from "@/components/shop/product-card";
 import { PurchasePanel } from "@/components/shop/purchase-panel";
+import { TryonPanel } from "@/components/tryon/tryon-panel";
+import { getCustomer } from "@/lib/account/session";
+import { createSupabasePublicClient } from "@/lib/supabase/public";
+import { tryonOffer } from "@/lib/tryon";
 import { parseFilters } from "@/lib/catalog/filters";
 import { getProductBySlug, searchProducts } from "@/lib/catalog/queries";
 
@@ -24,6 +28,16 @@ export async function generateMetadata({ params }: PageProps<"/product/[slug]">)
 export default async function ProductPage({ params }: PageProps<"/product/[slug]">) {
   const product = await getProductBySlug((await params).slug);
   if (!product || product.variants.length === 0) notFound();
+
+  const garment = product.media.find((m) => m.is_tryon_garment);
+  const offer = product.tryon_enabled && garment ? tryonOffer() : null;
+  const [tryonConfig, customer] = offer
+    ? await Promise.all([
+        createSupabasePublicClient().rpc("tryon_public_config").then((r) => (r.data ?? null) as { enabled: boolean; retention_hours: number; consent_version: string } | null),
+        getCustomer(),
+      ])
+    : [null, null];
+  const tryon = offer && tryonConfig?.enabled ? { offer, config: tryonConfig } : null;
 
   const related = product.category
     ? (await searchProducts(parseFilters({}, { category: product.category.slug }), 5)).products.filter((p) => p.id !== product.id).slice(0, 4)
@@ -58,6 +72,19 @@ export default async function ProductPage({ params }: PageProps<"/product/[slug]
           <div className="mt-6">
             <PurchasePanel variants={product.variants} />
           </div>
+          {tryon ? (
+            <div className="mt-6">
+              <TryonPanel
+                productTitle={product.title}
+                variants={product.variants.map((v) => ({ id: v.id, size: v.size, color: v.color, available: v.available }))}
+                signedIn={!!customer}
+                signInHref={`/account/login?next=${encodeURIComponent(`/product/${product.slug}`)}`}
+                offer={tryon.offer}
+                consentVersion={tryon.config.consent_version}
+                retentionHours={tryon.config.retention_hours}
+              />
+            </div>
+          ) : null}
           <div className="mt-10 divide-y divide-line border-y border-line text-sm">
             <details open className="py-4">
               <summary className="cursor-pointer font-semibold text-espresso">Details</summary>

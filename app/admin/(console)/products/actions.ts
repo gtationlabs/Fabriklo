@@ -177,3 +177,32 @@ export async function adjustStock(variantId: string, productId: string, _prev: A
   revalidatePath("/admin/inventory");
   return { ok: true, message: "Stock updated.", errors: {} };
 }
+
+// ---------------------------------------------------------------------------
+// Try-on garment reference photo (public product-media bucket + flag on the product)
+// ---------------------------------------------------------------------------
+export type GarmentState = { ok: boolean; message: string | null };
+
+export async function setTryonGarment(productId: string, _prev: GarmentState, fd: FormData): Promise<GarmentState> {
+  const auth = await checkStaff("products.write");
+  if (!auth.ok) return { ok: false, message: auth.message };
+  if (!/^[0-9a-f-]{36}$/.test(productId)) return { ok: false, message: "Unknown product." };
+  const file = fd.get("garment");
+  const alt = String(fd.get("alt") ?? "").trim();
+  if (!(file instanceof File) || file.size === 0) return { ok: false, message: "Choose a garment photo." };
+  if (alt.length < 3 || alt.length > 200) return { ok: false, message: "Alt text must be 3–200 characters." };
+  const { preparePhoto, PREPARE_MESSAGES } = await import("@/lib/tryon/images");
+  const prepared = await preparePhoto(new Uint8Array(await file.arrayBuffer()));
+  if (!prepared.ok) return { ok: false, message: PREPARE_MESSAGES[prepared.code] };
+  const { randomUUID } = await import("node:crypto");
+  const objectPath = `products/${productId}/garment-${randomUUID()}.jpg`;
+  const supabase = await createSupabaseServerClient();
+  const { error: upErr } = await supabase.storage.from("product-media").upload(objectPath, Buffer.from(prepared.photo.bytes), { contentType: "image/jpeg" });
+  if (upErr) return { ok: false, message: "Upload failed: " + upErr.message };
+  const { error } = await supabase.rpc("admin_set_tryon_garment", {
+    p_product_id: productId, p_storage_path: objectPath, p_alt: alt, p_width: prepared.photo.width, p_height: prepared.photo.height,
+  });
+  if (error) return { ok: false, message: friendlyDbError(error) };
+  revalidatePath(`/admin/products/${productId}`);
+  return { ok: true, message: "Garment photo saved. Try-on is enabled for this product." };
+}

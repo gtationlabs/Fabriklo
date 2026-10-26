@@ -68,6 +68,11 @@ export default async function AccountPage() {
             )}
             <Link href="/account/addresses" className="mt-3 inline-block underline">Manage addresses</Link>
           </section>
+          <section aria-labelledby="tryon-h" className="rounded border border-line bg-white p-5 text-sm">
+            <h2 id="tryon-h" className="font-semibold text-espresso">Virtual try-on</h2>
+            <p className="mt-2 text-muted">Photos you upload for try-on stay private and expire automatically.</p>
+            <Link href="/account/try-on" className="mt-3 inline-block underline">My try-ons</Link>
+          </section>
           <section aria-labelledby="details-h" className="rounded border border-line bg-white p-5">
             <h2 id="details-h" className="mb-3 font-semibold text-espresso">Your details</h2>
             <ProfileForm customer={customer} />

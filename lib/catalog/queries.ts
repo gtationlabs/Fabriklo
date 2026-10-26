@@ -84,7 +84,7 @@ export type ProductDetail = {
     compare_at_minor: number | null;
     available: number;
   }[];
-  media: { id: string; storage_path: string; alt: string; position: number }[];
+  media: { id: string; storage_path: string; alt: string; position: number; is_tryon_garment: boolean }[];
 };
 
 export async function getProductBySlug(slug: string): Promise<ProductDetail | null> {
@@ -93,7 +93,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, slug, title, subtitle, description, materials, care, audience, is_demo, tryon_enabled, seo_title, seo_description, category:categories(slug, name), variants:product_variants(id, sku, size, color, color_hex, price_minor, compare_at_minor, position), media:product_media(id, storage_path, alt, position)",
+      "id, slug, title, subtitle, description, materials, care, audience, is_demo, tryon_enabled, seo_title, seo_description, category:categories(slug, name), variants:product_variants(id, sku, size, color, color_hex, price_minor, compare_at_minor, position), media:product_media(id, storage_path, alt, position, is_tryon_garment)",
     )
     .eq("slug", slug)
     .maybeSingle();

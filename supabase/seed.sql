@@ -153,6 +153,14 @@ insert into public.shipping_zones (code, name, districts, is_fallback, fee_minor
   ('outside-dhaka', 'Outside Dhaka (demo rate)', '{}', true, 13000, 800000, true, 2, 5, 2);
 drop table if exists seed_products;
 
+-- Demo try-on garment: a synthetic, labelled placeholder drawing (no photo of a
+-- real product or person). Real garment photos are uploaded per product in admin.
+insert into public.product_media (product_id, kind, storage_path, alt, width, height, position, is_tryon_garment)
+select p.id, 'image', '/assets/demo/garment-tee.png', 'Demo garment placeholder for ' || p.title, 900, 1100, 1000, true
+  from public.products p where p.slug in ('essential-crew-tee', 'heavyweight-pocket-tee', 'relaxed-graphic-tee', 'ribbed-fitted-tee');
+update public.products set tryon_enabled = true
+ where slug in ('essential-crew-tee', 'heavyweight-pocket-tee', 'relaxed-graphic-tee', 'ribbed-fitted-tee');
+
 -- -----------------------------------------------------------------------------
 -- Starter content pages (TEMPLATES). Clearly marked; the owner must review and
 -- replace them (legal text especially) before launch. No fees are hard-coded:
