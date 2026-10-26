@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PublishForm, SceneEditor, SettingsEditor, VersionList } from "@/components/admin/hero-editor";
+import { NewPageForm } from "@/components/admin/new-page-form";
 import { requireStaff } from "@/lib/auth/staff";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getDraftHero } from "@/lib/cms/hero-admin";
 import { moveScene } from "./actions";
 
@@ -10,6 +12,8 @@ export default async function ContentPage() {
   const canPublish = staff.permissions.includes("cms.publish");
   const hero = await getDraftHero("home");
   if (!hero) notFound();
+  const supabase = await createSupabaseServerClient();
+  const { data: pages } = await supabase.from("cms_pages").select("id, slug, title, status, page_kind, updated_at").order("slug");
 
   return (
     <div className="space-y-10">
@@ -73,6 +77,20 @@ export default async function ContentPage() {
       <section aria-labelledby="versions-h" className="space-y-3">
         <h2 id="versions-h" className="font-semibold text-espresso">Published versions</h2>
         <VersionList versions={hero.versions} liveId={hero.liveVersionId} canPublish={canPublish} />
+      </section>
+
+      <section aria-labelledby="pages-h" className="space-y-4 border-t border-line pt-8">
+        <h2 id="pages-h" className="font-display text-2xl font-semibold text-espresso">Pages</h2>
+        <p className="text-sm text-muted">Help and legal pages. The starter pages are templates: review them before launch.</p>
+        <ul className="divide-y divide-line rounded-lg border border-line bg-white text-sm" data-testid="page-list">
+          {(pages ?? []).map((p) => (
+            <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-2">
+              <Link href={`/admin/content/pages/${p.id}`} className="font-medium hover:underline">{p.title}</Link>
+              <span className="text-muted">/{p.slug} · {p.page_kind} · {p.status}</span>
+            </li>
+          ))}
+        </ul>
+        <NewPageForm />
       </section>
     </div>
   );

@@ -2,6 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { CART_COOKIE } from "@/lib/cart/service";
 import { createSupabasePublicClient } from "@/lib/supabase/public";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Quote } from "./schema";
 import type { placeOrderSchema } from "./schema";
 import type { z } from "zod";
@@ -62,7 +63,9 @@ export type PlacedOrder = { orderNumber: string; trackingToken: string; totalMin
 export async function placeOrder(input: z.output<typeof placeOrderSchema>): Promise<PlacedOrder> {
   const token = await cartToken();
   if (!token) throw new CheckoutError("cart_missing", MESSAGES.cart_missing);
-  const { data, error } = await createSupabasePublicClient().rpc("create_order", {
+  // The user's own client: when signed in, Postgres links the order to auth.uid().
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc("create_order", {
     p_cart_token: token,
     p_idempotency_key: input.idempotencyKey,
     p_customer: { name: input.name, phone: input.phone, email: input.email ?? null },

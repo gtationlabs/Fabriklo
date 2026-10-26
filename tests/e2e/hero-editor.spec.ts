@@ -68,3 +68,42 @@ test("content editor drafts, previews, publishes and rolls back the store tour",
   await expect(visitor.getByRole("heading", { level: 1 })).toHaveText(original);
   await visitor.close();
 });
+
+test("content editor edits a help page with blocks, publishes it and rolls back", async ({ page, browser }) => {
+  test.setTimeout(120_000);
+  const u = await createTestUser("content_editor");
+  created.push(u.id);
+  await signInWithMfa(page, u.email, u.password);
+  await page.goto("/admin/content");
+  await page.getByTestId("page-list").getByRole("link", { name: "Size guide" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Size guide" })).toBeVisible();
+
+  const marker = `Measured ${randomUUID().slice(0, 5)}`;
+  await page.getByRole("button", { name: "paragraph", exact: true }).click();
+  const last = page.getByTestId("block").last();
+  await last.getByLabel("Text").fill(`${marker} with a [link](/shop) and **bold** text.`);
+  // An unsafe link is refused by validation before anything is saved.
+  await page.getByRole("button", { name: "cta", exact: true }).click();
+  await page.getByTestId("block").last().getByLabel("Internal link").fill("https://evil.example");
+  await page.getByRole("button", { name: "Save draft" }).click();
+  await expect(page.getByRole("form", { name: "Page editor" }).getByRole("alert")).toContainText("internal paths");
+  await page.getByTestId("block").last().getByRole("button", { name: "Remove" }).click();
+  await page.getByRole("button", { name: "Save draft" }).click();
+  await expect(page.getByRole("form", { name: "Page editor" }).getByRole("status")).toContainText("Draft saved");
+
+  const visitor = await browser.newPage();
+  await visitor.goto("/size-guide");
+  await expect(visitor.getByText(marker)).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Publish draft" }).click();
+  await expect(page.getByRole("form", { name: "Publish page" }).getByRole("status")).toContainText("is live");
+  await visitor.reload();
+  await expect(visitor.getByText(marker)).toBeVisible();
+  await expect(visitor.getByRole("article").getByRole("link", { name: "link" })).toHaveAttribute("href", "/shop");
+
+  await page.getByRole("button", { name: "Roll back to v1" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "is live again" })).toBeVisible();
+  await visitor.reload();
+  await expect(visitor.getByText(marker)).toHaveCount(0);
+  await visitor.close();
+});

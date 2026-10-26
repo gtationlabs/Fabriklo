@@ -150,3 +150,61 @@ insert into public.shipping_zones (code, name, districts, is_fallback, fee_minor
   ('inside-dhaka', 'Inside Dhaka (demo rate)', array['Dhaka'], false, 7000, 500000, true, 1, 2, 1),
   ('outside-dhaka', 'Outside Dhaka (demo rate)', '{}', true, 13000, 800000, true, 2, 5, 2);
 drop table if exists seed_products;
+
+-- -----------------------------------------------------------------------------
+-- Starter content pages (TEMPLATES). Clearly marked; the owner must review and
+-- replace them (legal text especially) before launch. No fees are hard-coded:
+-- delivery charges come from the configurable shipping zones at checkout.
+-- -----------------------------------------------------------------------------
+create temp table seed_pages (slug text, title text, kind text, seo text, blocks jsonb) on commit drop;
+insert into seed_pages values
+('shipping', 'Shipping & delivery', 'help', 'How delivery works, delivery areas and timelines.', $j$[
+ {"type":"callout","tone":"warning","text":"Template page: confirm delivery partners, areas and timelines before launch."},
+ {"type":"paragraph","text":"We deliver across all 64 districts of Bangladesh. The delivery charge and the expected delivery time for your district are shown at checkout before you place your order."},
+ {"type":"heading","level":2,"text":"How it works"},
+ {"type":"list","style":"number","items":["Place your order and choose cash on delivery.","We call or text to confirm your order before dispatch.","We pack your order and hand it to our delivery partner.","Pay the rider in cash when your parcel arrives."]},
+ {"type":"heading","level":2,"text":"Tracking your order"},
+ {"type":"paragraph","text":"After checkout you get a private tracking link. If you have an account, your orders are also listed under **My account**. You can always [track an order](/orders/track) with your order number and tracking code."},
+ {"type":"faq","items":[{"q":"Can I change my address after ordering?","a":"Contact us as soon as possible. We can update the address until the parcel is handed to the courier."},{"q":"What if I am not home?","a":"The rider will call you. If delivery fails, we will try again or contact you to arrange a new time."}]},
+ {"type":"cta","label":"Start shopping","href":"/shop"}]$j$),
+('returns', 'Returns & exchanges', 'help', 'How to return or exchange an item.', $j$[
+ {"type":"callout","tone":"warning","text":"Template page: set your real return window, conditions and refund method before launch."},
+ {"type":"paragraph","text":"If something does not fit or is not what you expected, contact us within the return window shown here once it is confirmed by the store."},
+ {"type":"heading","level":2,"text":"Conditions"},
+ {"type":"list","style":"bullet","items":["Items must be unworn, unwashed and with tags attached.","Keep the original packaging where possible.","Some items, such as innerwear, may not be returnable."]},
+ {"type":"heading","level":2,"text":"How to start a return"},
+ {"type":"paragraph","text":"Contact us with your order number. We will explain the next steps and any pickup or drop-off options."}]$j$),
+('size-guide', 'Size guide', 'help', 'Find your size.', $j$[
+ {"type":"callout","tone":"info","text":"Template page: add measurements for your actual garments."},
+ {"type":"paragraph","text":"Measurements vary by style. Check the product page for fit notes, and contact us if you are between sizes."},
+ {"type":"heading","level":2,"text":"How to measure"},
+ {"type":"list","style":"bullet","items":["Chest: around the fullest part, under the arms.","Waist: around your natural waistline.","Inseam: from the crotch to the bottom of the ankle."]}]$j$),
+('about', 'About us', 'page', 'About the store.', $j$[
+ {"type":"callout","tone":"info","text":"Template page: tell your own story here."},
+ {"type":"paragraph","text":"We make considered, comfortable clothing for everyday life in Bangladesh."},
+ {"type":"image","path":"/assets/store/store-01.webp","alt":"Wide view of the store entrance with wooden ceiling and clothing racks.","caption":"Our store"},
+ {"type":"cta","label":"Explore the collection","href":"/shop"}]$j$),
+('contact', 'Contact', 'help', 'How to reach us.', $j$[
+ {"type":"callout","tone":"warning","text":"Template page: add your real phone number, email, address and opening hours."},
+ {"type":"paragraph","text":"Questions about an order? Have your order number ready and contact us. We usually reply within one working day."},
+ {"type":"cta","label":"Track an order","href":"/orders/track"}]$j$),
+('privacy', 'Privacy policy', 'legal', 'How we handle personal data.', $j$[
+ {"type":"callout","tone":"warning","text":"Template only, not legal advice. Have this reviewed by a qualified professional before launch."},
+ {"type":"heading","level":2,"text":"What we collect"},
+ {"type":"list","style":"bullet","items":["Order details: name, mobile number, delivery address, optional email.","Account details if you create an account.","Photos you choose to upload for virtual try-on, kept private and deleted on schedule (when that feature launches)."]},
+ {"type":"heading","level":2,"text":"How we use it"},
+ {"type":"paragraph","text":"To deliver your orders, contact you about them, prevent fraud, and improve the store. We do not sell your personal data."},
+ {"type":"heading","level":2,"text":"Your choices"},
+ {"type":"paragraph","text":"You can ask us to access, correct or delete your data. Contact us using the details on the [contact page](/contact)."}]$j$),
+('terms', 'Terms of service', 'legal', 'Terms for using the store.', $j$[
+ {"type":"callout","tone":"warning","text":"Template only, not legal advice. Have this reviewed by a qualified professional before launch."},
+ {"type":"paragraph","text":"By placing an order you agree to these terms. Prices are in Bangladeshi Taka (BDT). We confirm every order before dispatch and may cancel an order if an item becomes unavailable or the order cannot be verified."},
+ {"type":"heading","level":2,"text":"Payment"},
+ {"type":"paragraph","text":"Cash on delivery is available. Online payment will be offered when it is enabled."}]$j$);
+
+insert into public.cms_pages (slug, title, page_kind, seo_description, draft_blocks, status)
+select slug, title, kind, seo, blocks, 'draft' from seed_pages;
+insert into public.cms_page_versions (page_id, version, blocks, title, note)
+select p.id, 1, p.draft_blocks, p.title, 'Starter template' from public.cms_pages p;
+update public.cms_pages p set published_version_id = v.id, status = 'published'
+from public.cms_page_versions v where v.page_id = p.id;

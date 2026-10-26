@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Menu, Search, ShoppingBag } from "lucide-react";
+import { Menu, Search, ShoppingBag, UserRound } from "lucide-react";
 import { getCart } from "@/lib/cart/service";
 
 const NAV = [
@@ -57,6 +57,9 @@ export async function SiteHeader({ overlay = false }: { overlay?: boolean }) {
               />
             </div>
           </form>
+          <Link href="/account" className="flex h-10 w-10 items-center justify-center" aria-label="My account">
+            <UserRound aria-hidden className="h-5 w-5" />
+          </Link>
           <Link href="/cart" className="relative flex h-10 w-10 items-center justify-center" aria-label={`Cart, ${cart.item_count} items`}>
             <ShoppingBag aria-hidden className="h-5 w-5" />
             {cart.item_count > 0 ? (

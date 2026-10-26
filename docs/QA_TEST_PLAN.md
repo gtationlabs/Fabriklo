@@ -26,6 +26,12 @@ Status legend: ✅ automated and passing · 🟡 partial · ⏳ not built yet.
 | Hero tour | Reduced motion and no-JS show all 5 static panels; axe clean in tour and static modes | ✅ | e2e |
 | Hero CMS | Drafts never public; publish snapshot; rollback restores; cms.edit vs cms.publish vs aal1; unsafe links/images rejected by DB | ✅ | `tests/db/hero.test.ts` |
 | Hero CMS | Editor drafts → preview → publish → live → rollback | ✅ | `tests/e2e/hero-editor.spec.ts` |
+| Pages CMS | Drafts never public; publish/rollback; cms.edit cannot publish or flip status; unknown block types, `<script>`, `javascript:` and reserved slugs rejected by DB | ✅ | `tests/db/pages-accounts.test.ts` |
+| Pages CMS | Editor adds blocks, unsafe link refused, publish → live, rollback → gone; starter pages render; axe | ✅ | e2e |
+| Accounts | Orders link to the signed-in customer; other customers see nothing and cannot derive tracking tokens; addresses private, one default; profile column grants | ✅ | db |
+| Accounts | Register (weak password refused) → address → prefilled checkout (zone fee) → order in account → sign out hides it → sign in (wrong password generic) | ✅ | `tests/e2e/accounts.spec.ts` |
+| Accounts | Password reset answers identically for unknown emails | ✅ | e2e |
+| Accounts | Email confirmation / reset link delivery | ⏳ | needs SMTP; local Supabase runs without confirmations |
 | Orders/COD | Server quote, zone fee + free threshold, COD limit, stale-total rejection, draft/oversold rejection, phone/district validation | ✅ | `tests/db/orders.test.ts` |
 | Orders/COD | Idempotent replay returns same order without double stock; cancel/return restocks exactly once | ✅ | db |
 | Orders/COD | State machine: pack before pickup, cash only after delivery, `paid` never settable for COD, permissions + MFA per field | ✅ | db |

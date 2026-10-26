@@ -35,11 +35,14 @@ function clearKey() {
 const inputCls =
   "mt-1 w-full rounded border border-line bg-white px-3 py-2.5 text-espresso focus:border-bronze focus:outline-none focus:ring-2 focus:ring-bronze/30 aria-[invalid=true]:border-danger";
 
-export function CheckoutForm({ cart, divisions }: { cart: Cart; divisions: Record<string, readonly string[]> }) {
+export type CheckoutPrefill = { name: string; phone: string; email: string; district: string; area: string; addressLine: string; postalCode: string };
+
+export function CheckoutForm({ cart, divisions, prefill }: { cart: Cart; divisions: Record<string, readonly string[]>; prefill?: CheckoutPrefill }) {
   const router = useRouter();
   const formId = useId();
-  const [district, setDistrict] = useState("");
+  const [district, setDistrict] = useState(prefill?.district ?? "");
   const [quote, setQuote] = useState<Quote | null>(null);
+
   const [quoting, setQuoting] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -72,6 +75,14 @@ export function CheckoutForm({ cart, divisions }: { cart: Cart; divisions: Recor
   useEffect(() => {
     if (formError) errorRef.current?.focus();
   }, [formError]);
+
+  // A prefilled district needs its delivery quote once the form is on screen.
+  const prefillDistrict = prefill?.district ?? "";
+  useEffect(() => {
+    if (!prefillDistrict) return;
+    const t = setTimeout(() => void loadQuote(prefillDistrict), 0);
+    return () => clearTimeout(t);
+  }, [prefillDistrict, loadQuote]);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -181,20 +192,20 @@ export function CheckoutForm({ cart, divisions }: { cart: Cart; divisions: Recor
           <legend className="font-semibold text-espresso">Contact</legend>
           <div>
             <label htmlFor={`${formId}-name`} className="text-sm font-medium">Full name</label>
-            <input {...field("name")} autoComplete="name" required className={inputCls} />
+            <input {...field("name")} defaultValue={prefill?.name ?? ""} autoComplete="name" required className={inputCls} />
             {err("name")}
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor={`${formId}-phone`} className="text-sm font-medium">Mobile number</label>
-              <input {...field("phone")} type="tel" inputMode="tel" autoComplete="tel" placeholder="01XXXXXXXXX" required className={inputCls} />
+              <input {...field("phone")} defaultValue={prefill?.phone ?? ""} type="tel" inputMode="tel" autoComplete="tel" placeholder="01XXXXXXXXX" required className={inputCls} />
               {err("phone")}
             </div>
             <div>
               <label htmlFor={`${formId}-email`} className="text-sm font-medium">
                 Email <span className="font-normal text-muted">(optional)</span>
               </label>
-              <input {...field("email")} type="email" autoComplete="email" className={inputCls} />
+              <input {...field("email")} defaultValue={prefill?.email ?? ""} type="email" autoComplete="email" className={inputCls} />
               {err("email")}
             </div>
           </div>
@@ -228,13 +239,13 @@ export function CheckoutForm({ cart, divisions }: { cart: Cart; divisions: Recor
             </div>
             <div>
               <label htmlFor={`${formId}-area`} className="text-sm font-medium">Area / thana</label>
-              <input {...field("area")} autoComplete="address-level3" required className={inputCls} />
+              <input {...field("area")} defaultValue={prefill?.area ?? ""} autoComplete="address-level3" required className={inputCls} />
               {err("area")}
             </div>
           </div>
           <div>
             <label htmlFor={`${formId}-addressLine`} className="text-sm font-medium">House, road, landmark</label>
-            <textarea {...field("addressLine")} autoComplete="street-address" rows={2} required className={inputCls} />
+            <textarea {...field("addressLine")} defaultValue={prefill?.addressLine ?? ""} autoComplete="street-address" rows={2} required className={inputCls} />
             {err("addressLine")}
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -242,7 +253,7 @@ export function CheckoutForm({ cart, divisions }: { cart: Cart; divisions: Recor
               <label htmlFor={`${formId}-postalCode`} className="text-sm font-medium">
                 Postcode <span className="font-normal text-muted">(optional)</span>
               </label>
-              <input {...field("postalCode")} inputMode="numeric" autoComplete="postal-code" maxLength={4} className={inputCls} />
+              <input {...field("postalCode")} defaultValue={prefill?.postalCode ?? ""} inputMode="numeric" autoComplete="postal-code" maxLength={4} className={inputCls} />
               {err("postalCode")}
             </div>
           </div>

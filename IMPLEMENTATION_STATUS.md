@@ -1,6 +1,6 @@
 # Implementation status
 
-_Last updated: 2026-10-26 · Milestone: foundation, slice 1 (catalog/admin), slice 2 (orders + cash on delivery), slice 3 (scroll store tour + hero editor)_
+_Last updated: 2026-10-26 · Milestone: foundation, slice 1 (catalog/admin), slice 2 (orders + cash on delivery), slice 3 (scroll store tour + hero editor), slice 4 (content pages + customer accounts)_
 
 This file is the honest source of truth for what exists. It does **not** claim production readiness.
 
@@ -21,12 +21,14 @@ The repository contained only a README. The client supplied five 2D store render
 | Admin | Staff login (throttled, generic errors), mandatory TOTP enrolment/verification, role-filtered console, overview KPIs from real data, product list/create/edit/publish/archive, variants with private cost, stock adjustments (reasoned, idempotent, audited), inventory alerts + ledger | E2E full slice |
 | Orders + COD (slice 2) | Migration 0008: shipping zones, 64 districts, server quote, idempotent `create_order` with atomic stock commit + snapshots, HMAC tracking tokens, state machine with guards, restock on cancel/return, manual shipments, explainable risk rules, pg_cron reservation expiry. Checkout page (BD address, phone normalisation, COD), order success with private tracking link, `/orders/track`. Admin orders list (views + search), order detail (timeline, transitions, courier entry, internal notes, flag), risk review queue | 16 order DB tests + 1 concurrency test + 3 E2E |
 | Store tour (slice 3) | GSAP ScrollTrigger 2.5D walkthrough over the 5 renders (push-in, drift, cross-dissolves, reversible), scene dots, skip, inert hidden scenes, reduced-motion / no-JS static panels, softer mobile motion. Migration 0009: draft scenes vs immutable published versions, publish/rollback RPCs (cms.publish), reorder, draft settings, stricter internal-link CHECK. Admin "Content & hero" editor with draft preview and version history | 5 hero DB tests + 10 tour E2E (desktop + mobile) + 1 editor E2E |
-| Tests | 28 unit · 60 DB/RLS/concurrency · 31 Playwright | all passing locally |
+| Content pages (slice 4) | Migration 0010: draft blocks vs immutable published versions, allow-listed block types enforced in Zod **and** SQL, publish/rollback/unpublish RPCs, reserved-slug guard, publish-permission trigger. `/[slug]` renderer (plain text, internal links only). Admin block editor with preview, SEO fields, version history. 7 starter template pages seeded (marked as templates) | 3 DB tests + 2 E2E |
+| Customer accounts (slice 4) | Sign up / sign in / sign out / password reset (generic messages, rate limits), `/auth/confirm` link handler, account page with order history, order detail via re-derived tracking token, addresses (up to 10, one default), profile edits. Orders placed while signed in are linked to the account; checkout prefills the default address | 4 DB tests + 2 E2E |
+| Tests | 28 unit · 67 DB/RLS/concurrency · 35 Playwright | all passing locally |
 
 ### Routes working now
 
-Storefront: `/`, `/shop`, `/men`, `/women`, `/category/[slug]`, `/collections/[slug]`, `/search`, `/product/[slug]`, `/cart`, `/checkout`, `/order/success`, `/orders/track`
-Admin: `/admin/login`, `/admin/mfa`, `/admin`, `/admin/products`, `/admin/products/new`, `/admin/products/[id]`, `/admin/inventory`, `/admin/orders`, `/admin/orders/[id]`, `/admin/risk`, `/admin/content`, `/admin/content/preview`
+Storefront: `/`, `/shop`, `/men`, `/women`, `/category/[slug]`, `/collections/[slug]`, `/search`, `/product/[slug]`, `/cart`, `/checkout`, `/order/success`, `/orders/track`, `/[slug]` (CMS pages: shipping, returns, size-guide, about, contact, privacy, terms), `/account`, `/account/login`, `/account/register`, `/account/forgot`, `/account/reset`, `/account/addresses`, `/account/orders/[number]`, `/auth/confirm`
+Admin: `/admin/login`, `/admin/mfa`, `/admin`, `/admin/products`, `/admin/products/new`, `/admin/products/[id]`, `/admin/inventory`, `/admin/orders`, `/admin/orders/[id]`, `/admin/risk`, `/admin/content`, `/admin/content/preview`, `/admin/content/pages/[id]`
 API: `GET /api/products`, `GET /api/cart`, `POST|PATCH|DELETE /api/cart/items`, `POST /api/checkout/quote`, `POST /api/checkout/orders`
 
 ## Mock vs live
@@ -37,7 +39,7 @@ There are **no** live third-party integrations yet. No payment, courier, SMS, em
 
 1. ~~Orders + COD~~ done in slice 2.
 2. ~~Store tour~~ done in slice 3.
-3. CMS pages + theme versions; customer accounts (sign-up/in, addresses, order history).
+3. ~~CMS pages + customer accounts~~ done in slice 4 (theme versions still to do).
 4. SSLCOMMERZ sandbox, courier adapters (manual first).
 5. AI try-on (FASHN) with private storage, queue worker, quotas, deletion.
 6. Marketing/coupons/automations, analytics, staff management UI, audit viewer.
@@ -52,7 +54,8 @@ There are **no** live third-party integrations yet. No payment, courier, SMS, em
 - CSP still permits inline scripts; rate limiting is single-instance in-memory; no Turnstile/WAF yet.
 - No error monitoring; no backup/restore drill performed.
 - Forced global sign-out on staff role change not implemented (role changes do take effect immediately in the DB).
-- Legal pages (privacy, terms, shipping, returns) are linked but not written; they 404 today (the tour's scene 4 button points to /shipping).
+- Legal and help pages exist as **templates** with a visible warning; the owner must replace the text (privacy/terms need professional review).
+- Account emails (confirmation, password reset) need an SMTP provider configured in Supabase Auth; locally, sign-ups are auto-confirmed and reset links are not delivered.
 - The store renders show "ALVIC STORE" signage; replace or mask before launch if that is not the brand.
 - Business details (brand name, contact, VAT applicability, delivery fees, COD limits) not supplied — placeholders/configurable settings are used.
 
