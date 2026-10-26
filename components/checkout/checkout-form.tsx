@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { resetTurnstile, turnstileToken } from "@/lib/security/turnstile-client";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { Cart } from "@/lib/cart/types";
 import type { Quote } from "@/lib/checkout/schema";
@@ -57,11 +58,14 @@ export function CheckoutForm({
   divisions,
   prefill,
   online = null,
+  challenge,
 }: {
   cart: Cart;
   divisions: Record<string, readonly string[]>;
   prefill?: CheckoutPrefill;
   online?: OnlineOffer;
+  /** Cloudflare Turnstile widget (server component), rendered only when configured. */
+  challenge?: React.ReactNode;
 }) {
   const router = useRouter();
   const formId = useId();
@@ -150,7 +154,8 @@ export function CheckoutForm({
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (submitting) return;
-    const fd = new FormData(e.currentTarget);
+    const formEl = e.currentTarget;
+    const fd = new FormData(formEl);
     const get = (k: string) => String(fd.get(k) ?? "").trim();
     const next: FieldErrors = {};
     if (get("name").length < 2) next.name = "Enter your full name";
@@ -199,6 +204,7 @@ export function CheckoutForm({
           note: get("note") || undefined,
           paymentMethod,
           expectedTotalMinor: quote.total_minor,
+          turnstileToken: turnstileToken(formEl),
         }),
       });
       const body = await res.json().catch(() => ({}));
@@ -224,6 +230,7 @@ export function CheckoutForm({
         for (const f of body.error.fields as { path: string; message: string }[]) fe[f.path] = f.message;
         setErrors(fe);
       }
+      resetTurnstile(formEl);
       setFormError(body?.error?.message ?? "We couldn't place your order. Please try again.");
     } catch {
       setFormError("Network problem. Your order may not have been placed: press the button again, it won't create a duplicate.");
@@ -457,6 +464,7 @@ export function CheckoutForm({
         {district && quote && paymentMethod === "cod" && !quote.cod_available && quote.total_minor != null ? (
           <p className="mt-2 text-sm text-danger">Cash on delivery isn&apos;t available for this order total.</p>
         ) : null}
+        {challenge ? <div className="mt-4">{challenge}</div> : null}
         <button
           type="submit"
           disabled={submitting || quoting}

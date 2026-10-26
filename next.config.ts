@@ -1,35 +1,9 @@
 import type { NextConfig } from "next";
 
 const isDev = process.env.NODE_ENV !== "production";
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-const supabaseOrigin = supabaseUrl ? new URL(supabaseUrl).origin : "";
-const supabaseWs = supabaseOrigin.replace(/^http/, "ws");
-// Analytics tags are only loaded with the visitor's consent, and only when configured.
-const ga4 = process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID ? ["https://www.googletagmanager.com", "https://*.google-analytics.com", "https://*.analytics.google.com"] : [];
-const pixel = process.env.NEXT_PUBLIC_META_PIXEL_ID ? ["https://connect.facebook.net", "https://www.facebook.com"] : [];
-
-/**
- * Content Security Policy. Scripts are limited to our own origin; 'unsafe-inline'
- * is still required for Next.js bootstrap scripts until nonce-based CSP is wired
- * (tracked in IMPLEMENTATION_STATUS.md). Payment/analytics domains are added
- * explicitly when those integrations land.
- */
-const csp = [
-  "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} ${ga4[0] ?? ""} ${pixel[0] ?? ""}`.replace(/\s+/g, " ").trim(),
-  "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: ${supabaseOrigin} ${[...ga4, ...pixel].join(" ")}`.replace(/\s+/g, " ").trim(),
-  "font-src 'self' data:",
-  `connect-src 'self' ${supabaseOrigin} ${supabaseWs} ${[...ga4, ...pixel].join(" ")}`.replace(/\s+/g, " ").trim(),
-  "frame-ancestors 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "object-src 'none'",
-  ...(isDev ? [] : ["upgrade-insecure-requests"]),
-].join("; ");
-
+// Content-Security-Policy is set per request in proxy.ts (nonce-based, see
+// lib/security/csp.ts). The headers below are static and apply to every route.
 const securityHeaders = [
-  { key: "Content-Security-Policy", value: csp },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
@@ -37,6 +11,14 @@ const securityHeaders = [
   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
   ...(isDev ? [] : [{ key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" }]),
 ];
+
+const supabaseOrigin = (() => {
+  try {
+    return process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin : "";
+  } catch {
+    return "";
+  }
+})();
 
 const nextConfig: NextConfig = {
   // Cache Components is off for now: almost every commerce route reads the

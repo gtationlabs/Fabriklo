@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getCourierAdapter } from "@/lib/couriers/registry";
 import { jsonError, rateLimited } from "@/lib/security/http";
-import { rateLimit } from "@/lib/security/rate-limit";
+import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { clientIp } from "@/lib/security/request";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest, ctx: RouteContext<"/api/couriers/[c
   const { courier } = await ctx.params;
   const adapter = getCourierAdapter(courier);
   if (!adapter || adapter.id === "manual" || !adapter.isConfigured()) return jsonError(404, "not_found", "No webhook for this courier.");
-  const rl = rateLimit(`courier:${clientIp(req.headers)}`, 300, 60_000);
+  const rl = await enforceRateLimit(`courier:${clientIp(req.headers)}`, 300, 60_000);
   if (!rl.ok) return rateLimited(rl.retryAfterSeconds);
   if (Number(req.headers.get("content-length") ?? 0) > 100_000) return jsonError(413, "too_large", "Request too large.");
   const raw = await req.text();

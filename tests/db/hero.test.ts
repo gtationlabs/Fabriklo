@@ -43,13 +43,15 @@ describe("hero drafts vs published versions", () => {
         return h;
       };
       const before = await live();
+      const [{ liveId }] = await sql.query<{ liveId: string }>(`select published_version_id as "liveId" from public.hero_tours where key = 'home'`);
       const [{ max }] = await sql.query<{ max: number }>(`select max(version) as max from public.hero_tour_versions`);
       const [{ r }] = await sql.query<{ r: { version: number; version_id: string } }>(`select public.admin_publish_hero('home', 'test') as r`);
       expect(r.version).toBe(max + 1);
       expect(await live()).toBe("Draft heading");
 
-      const [{ id: prev }] = await sql.query<{ id: string }>(`select id from public.hero_tour_versions where version = $1`, [max]);
-      await sql.query(`select public.admin_rollback_hero($1)`, [prev]);
+      // Roll back to whatever was live before (not necessarily the highest version: an
+      // earlier rollback, e.g. from the E2E suite, may have left an older version live).
+      await sql.query(`select public.admin_rollback_hero($1)`, [liveId]);
       expect(await live()).toBe(before);
       const [{ heading }] = await sql.query<{ heading: string }>(`select heading from public.hero_scenes where position = 1`);
       expect(heading).toBe(before);

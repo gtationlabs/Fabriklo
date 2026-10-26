@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { CartError, getCart, setCartItem } from "@/lib/cart/service";
 import { forbiddenOrigin, jsonError, rateLimited, zodError } from "@/lib/security/http";
-import { rateLimit } from "@/lib/security/rate-limit";
+import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { clientIp, isSameOrigin } from "@/lib/security/request";
 
 const bodySchema = z.object({
@@ -15,7 +15,7 @@ const deleteSchema = z.object({ variantId: z.uuid() });
 
 async function guard(req: NextRequest) {
   if (!isSameOrigin(req.headers, req.url)) return forbiddenOrigin();
-  const rl = rateLimit(`cart:${clientIp(req.headers)}`, 60, 60_000);
+  const rl = await enforceRateLimit(`cart:${clientIp(req.headers)}`, 60, 60_000);
   if (!rl.ok) return rateLimited(rl.retryAfterSeconds);
   return null;
 }

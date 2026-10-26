@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LoginForm } from "./login-form";
+import { Turnstile } from "@/components/security/turnstile";
 import { signOut } from "./actions";
 
 export const metadata: Metadata = { title: "Staff sign in" };
@@ -20,7 +21,7 @@ export default async function AdminLoginPage({ searchParams }: PageProps<"/admin
           </div>
         ) : null}
         <div className="mt-6">
-          <LoginForm />
+          <LoginForm challenge={<Turnstile action="admin_login" />} />
         </div>
       </div>
     </main>

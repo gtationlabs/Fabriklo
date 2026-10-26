@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getCustomer } from "@/lib/account/session";
 import { createJob, hashIp, runWorkerTick, TryonError } from "@/lib/tryon/service";
 import { forbiddenOrigin, jsonError, rateLimited, zodError } from "@/lib/security/http";
-import { rateLimit } from "@/lib/security/rate-limit";
+import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { clientIp, isSameOrigin } from "@/lib/security/request";
 
 const schema = z.object({
@@ -20,8 +20,8 @@ export async function POST(req: NextRequest) {
   const customer = await getCustomer();
   if (!customer) return jsonError(401, "sign_in", "Sign in to use try-on.");
   const ip = clientIp(req.headers);
-  const rl = rateLimit(`tryon-jobs:${customer.id}`, 10, 60 * 60_000);
-  const rlIp = rateLimit(`tryon-jobs-ip:${ip}`, 20, 60 * 60_000);
+  const rl = await enforceRateLimit(`tryon-jobs:${customer.id}`, 10, 60 * 60_000);
+  const rlIp = await enforceRateLimit(`tryon-jobs-ip:${ip}`, 20, 60 * 60_000);
   if (!rl.ok || !rlIp.ok) return rateLimited(Math.max(rl.retryAfterSeconds, rlIp.retryAfterSeconds));
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return zodError(parsed.error);

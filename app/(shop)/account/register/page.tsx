@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Turnstile } from "@/components/security/turnstile";
 import { redirect } from "next/navigation";
 import { RegisterForm } from "@/components/account/auth-forms";
 import { getCustomer } from "@/lib/account/session";
@@ -13,7 +14,7 @@ export default async function RegisterPage({ searchParams }: PageProps<"/account
     <div className="mx-auto max-w-md px-4 py-12 sm:px-6">
       <h1 className="font-display text-4xl font-semibold text-espresso">Create an account</h1>
       <p className="mt-2 text-sm text-muted">Keep your addresses and see your order history.</p>
-      <div className="mt-8"><RegisterForm next={safeNext(sp.next)} /></div>
+      <div className="mt-8"><RegisterForm next={safeNext(sp.next)} challenge={<Turnstile action="register" />} /></div>
     </div>
   );
 }

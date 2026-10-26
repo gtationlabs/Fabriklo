@@ -17,6 +17,7 @@
     "staff:create": "tsx --env-file=.env.local scripts/create-staff.ts"
   },
   "dependencies": {
+    "@sentry/nextjs": "^11.9.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.118.0",
     "gsap": "^3.13.0",

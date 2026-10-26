@@ -74,7 +74,19 @@ test.describe("storefront", () => {
   test("security headers are present", async ({ request }) => {
     const res = await request.get("/");
     const h = res.headers();
-    expect(h["content-security-policy"]).toContain("frame-ancestors 'none'");
+    const csp = h["content-security-policy"];
+    expect(csp).toContain("frame-ancestors 'none'");
+    // Nonce-based script policy: no inline-script allowance, a fresh nonce per response.
+    const scriptSrc = csp.split(";").find((d) => d.trim().startsWith("script-src"))!;
+    expect(scriptSrc).toMatch(/'nonce-[A-Za-z0-9+/=]{16,}'/);
+    expect(scriptSrc).toContain("'strict-dynamic'");
+    expect(scriptSrc).not.toContain("'unsafe-inline'");
+    const again = (await request.get("/")).headers()["content-security-policy"];
+    expect(again).not.toBe(csp);
+    // The nonce is on the rendered page's scripts, so the policy actually applies.
+    const html = await res.text();
+    const nonce = /'nonce-([^']+)'/.exec(scriptSrc)![1];
+    expect(html).toContain(`nonce="${nonce}"`);
     expect(h["x-content-type-options"]).toBe("nosniff");
     expect(h["x-powered-by"]).toBeUndefined();
   });

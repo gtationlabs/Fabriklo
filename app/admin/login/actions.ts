@@ -3,8 +3,9 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { rateLimit } from "@/lib/security/rate-limit";
+import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { clientIp } from "@/lib/security/request";
+import { TURNSTILE_FAILED_MESSAGE, TURNSTILE_FIELD, verifyTurnstile } from "@/lib/security/turnstile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const schema = z.object({
@@ -21,9 +22,10 @@ export async function signInStaff(_prev: LoginState, formData: FormData): Promis
   if (!parsed.success) return { error: "Enter a valid email and password." };
 
   // Per-IP limit is generous enough for several staff behind one office NAT; the per-account limit is the tight one.
-  const byIp = rateLimit(`admin-login-ip:${ip}`, 30, 15 * 60_000);
-  const byEmail = rateLimit(`admin-login-email:${parsed.data.email.toLowerCase()}`, 5, 15 * 60_000);
+  const byIp = await enforceRateLimit(`admin-login-ip:${ip}`, 30, 15 * 60_000);
+  const byEmail = await enforceRateLimit(`admin-login-email:${parsed.data.email.toLowerCase()}`, 5, 15 * 60_000);
   if (!byIp.ok || !byEmail.ok) return { error: "Too many attempts. Try again in a few minutes." };
+  if (!(await verifyTurnstile(formData.get(TURNSTILE_FIELD), ip)).ok) return { error: TURNSTILE_FAILED_MESSAGE };
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);

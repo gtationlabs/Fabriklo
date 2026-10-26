@@ -38,6 +38,8 @@ export const placeOrderSchema = z.object({
   note: z.string().trim().max(500).optional(),
   paymentMethod: z.enum(["cod", "sslcommerz"]),
   expectedTotalMinor: z.number().int().nonnegative(),
+  // Cloudflare Turnstile token (present only when the challenge is configured).
+  turnstileToken: z.string().max(2048).optional(),
 });
 
 export type PlaceOrderInput = z.input<typeof placeOrderSchema>;

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getStoreContact, getStoreIdentity } from "@/lib/settings/public";
 import { NewsletterForm } from "./newsletter-form";
+import { Turnstile } from "@/components/security/turnstile";
 
 const COLUMNS = [
   { title: "Shop", links: [["/shop", "All products"], ["/men", "Men"], ["/women", "Women"], ["/collections/new-arrivals", "New arrivals"]] },
@@ -25,7 +26,7 @@ export async function SiteFooter() {
               {contact.hours ? <p>{contact.hours}</p> : null}
             </address>
           ) : null}
-          <NewsletterForm />
+          <NewsletterForm challenge={<Turnstile action="newsletter" />} />
         </div>
         {COLUMNS.map((col) => (
           <nav key={col.title} aria-label={col.title}>

@@ -1,8 +1,9 @@
 "use client";
 
 import { useId, useState } from "react";
+import { resetTurnstile, turnstileToken } from "@/lib/security/turnstile-client";
 
-export function NewsletterForm() {
+export function NewsletterForm({ challenge }: { challenge?: React.ReactNode }) {
   const id = useId();
   const [email, setEmail] = useState("");
   const [state, setState] = useState<{ ok: boolean; text: string } | null>(null);
@@ -14,17 +15,21 @@ export function NewsletterForm() {
     setBusy(true);
     setState(null);
     try {
-      const fd = new FormData(e.currentTarget);
+      const formEl = e.currentTarget;
+      const fd = new FormData(formEl);
       const res = await fetch("/api/newsletter/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, source: "footer", website: String(fd.get("website") ?? "") }),
+        body: JSON.stringify({ email, source: "footer", website: String(fd.get("website") ?? ""), turnstileToken: turnstileToken(formEl) }),
       });
       const body = (await res.json().catch(() => ({}))) as { message?: string; error?: { message?: string } };
       if (res.ok) {
         setState({ ok: true, text: body.message ?? "Check your inbox to confirm." });
         setEmail("");
-      } else setState({ ok: false, text: body.error?.message ?? "Please check the email address." });
+      } else {
+        resetTurnstile(formEl);
+        setState({ ok: false, text: body.error?.message ?? "Please check the email address." });
+      }
     } catch {
       setState({ ok: false, text: "Network problem. Please try again." });
     } finally {
@@ -40,6 +45,7 @@ export function NewsletterForm() {
         <input id={id} type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" maxLength={254} className="w-full rounded border border-cream/20 bg-cream/10 px-3 py-2 text-sm text-cream placeholder:text-cream/40" />
         <button type="submit" disabled={busy} className="rounded bg-cream px-3 py-2 text-sm font-medium text-espresso disabled:opacity-60">Join</button>
       </div>
+      {challenge ? <div className="mt-2">{challenge}</div> : null}
       <div className="absolute -left-[9999px]" aria-hidden="true">
         <label>Leave this empty<input name="website" tabIndex={-1} autoComplete="off" /></label>
       </div>

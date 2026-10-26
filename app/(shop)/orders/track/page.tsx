@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { OrderTracking } from "@/components/orders/order-tracking";
 import { trackOrder } from "@/lib/checkout/service";
-import { rateLimit } from "@/lib/security/rate-limit";
+import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { clientIp } from "@/lib/security/request";
 
 export const metadata: Metadata = { title: "Track your order", robots: { index: false, follow: false } };
@@ -15,7 +15,7 @@ export default async function TrackOrderPage({ searchParams }: PageProps<"/order
   let message: string | null = null;
 
   if (orderNumber || token) {
-    const rl = rateLimit(`track:${clientIp(await headers())}`, 20, 10 * 60_000);
+    const rl = await enforceRateLimit(`track:${clientIp(await headers())}`, 20, 10 * 60_000);
     if (!rl.ok) message = "Too many lookups. Please wait a few minutes and try again.";
     else {
       result = await trackOrder(orderNumber, token);

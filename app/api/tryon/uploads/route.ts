@@ -3,7 +3,7 @@ import { getCustomer } from "@/lib/account/session";
 import { TRYON_MAX_BYTES, PREPARE_MESSAGES } from "@/lib/tryon/images";
 import { TryonError, uploadPhoto } from "@/lib/tryon/service";
 import { forbiddenOrigin, jsonError, rateLimited } from "@/lib/security/http";
-import { rateLimit } from "@/lib/security/rate-limit";
+import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { clientIp, isSameOrigin } from "@/lib/security/request";
 
 /**
@@ -16,8 +16,8 @@ export async function POST(req: NextRequest) {
   if (!isSameOrigin(req.headers, req.url)) return forbiddenOrigin();
   const customer = await getCustomer();
   if (!customer) return jsonError(401, "sign_in", "Sign in to use try-on.");
-  const rl = rateLimit(`tryon-upload:${customer.id}`, 20, 60 * 60_000);
-  const rlIp = rateLimit(`tryon-upload-ip:${clientIp(req.headers)}`, 40, 60 * 60_000);
+  const rl = await enforceRateLimit(`tryon-upload:${customer.id}`, 20, 60 * 60_000);
+  const rlIp = await enforceRateLimit(`tryon-upload-ip:${clientIp(req.headers)}`, 40, 60 * 60_000);
   if (!rl.ok || !rlIp.ok) return rateLimited(Math.max(rl.retryAfterSeconds, rlIp.retryAfterSeconds));
   if (Number(req.headers.get("content-length") ?? 0) > TRYON_MAX_BYTES + 4096) return jsonError(413, "too_large", PREPARE_MESSAGES.too_large);
   const fd = await req.formData().catch(() => null);

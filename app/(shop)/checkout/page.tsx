@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CheckoutForm } from "@/components/checkout/checkout-form";
+import { Turnstile } from "@/components/security/turnstile";
 import { getAddresses, getCustomer } from "@/lib/account/session";
 import { getCart } from "@/lib/cart/service";
 import { BD_DIVISIONS } from "@/lib/geo/bd";
@@ -36,7 +37,7 @@ export default async function CheckoutPage() {
           <Link href="/account/login?next=/checkout" className="underline">Sign in</Link> to use a saved address.
         </p>
       )}
-      <CheckoutForm cart={cart} divisions={BD_DIVISIONS} prefill={prefill} online={onlinePaymentOffer()} />
+      <CheckoutForm cart={cart} divisions={BD_DIVISIONS} prefill={prefill} online={onlinePaymentOffer()} challenge={<Turnstile action="checkout" />} />
     </div>
   );
 }

@@ -21,7 +21,10 @@ Status legend: ✅ automated and passing · 🟡 partial · ⏳ not built yet.
 | Ledgers | Movements/audit cannot be edited or deleted | ✅ | db |
 | Storage | Try-on photos owner-only; product-media write needs permission | ✅ | db |
 | Accessibility | axe (WCAG 2.2 AA tags) on home (desktop + mobile) and checkout | 🟡 | e2e (more pages to add) |
-| Headers | CSP/nosniff/no x-powered-by | ✅ | e2e |
+| Headers | Nonce-based CSP (`'strict-dynamic'`, no `'unsafe-inline'` scripts, fresh nonce per response, nonce present on the page's scripts), nosniff, no x-powered-by | ✅ | `tests/e2e/storefront.spec.ts` |
+| Hardening | CSP builder (dev eval only, per-integration origins, Sentry origin from DSN); Turnstile skipped when unconfigured, token required when configured, siteverify body, fails closed on outage; shared rate limiter hashes keys, uses the store only when configured, falls back to memory (not open) on failure; Sentry scrubber drops bodies/cookies/IPs and redacts emails, JWTs, Supabase keys, token query params | ✅ | `tests/unit/hardening.test.ts` |
+| Hardening | `rate_limit_hit`: service_role only; fixed window with retry-after; reset after the window; purge job; rejects non-digest keys and out-of-range limits; cron job scheduled | ✅ | `tests/db/rate-limit.test.ts` |
+| Hardening | Turnstile widget visible and enforced with real keys; Sentry event received with no PII | ⏳ | needs Cloudflare + Sentry accounts (staging) |
 | Hero tour | Forward scroll passes scenes 1→5 in order and reverse 5→1; dots jump; skip moves focus; hidden scenes inert; desktop + mobile | ✅ | `tests/e2e/tour.spec.ts` |
 | Hero tour | Reduced motion and no-JS show all 5 static panels; axe clean in tour and static modes | ✅ | e2e |
 | Hero CMS | Drafts never public; publish snapshot; rollback restores; cms.edit vs cms.publish vs aal1; unsafe links/images rejected by DB | ✅ | `tests/db/hero.test.ts` |
@@ -72,4 +75,5 @@ Status legend: ✅ automated and passing · 🟡 partial · ⏳ not built yet.
 | Admin E2E | Settings: store name on storefront header/title, invalid name refused, COD limit bounds, zone fee change reflected in checkout quote, duplicate district refused, demo warning cleared; audit log filtered + CSV; support agent denied Settings/Audit | ✅ | e2e |
 | Admin E2E | Staff: invite → one-time link → accept → weak password refused → password → MFA enrol → active in list → order manager denied Staff → suspend locks out on next request → reactivate → MFA reset removes factors; events audited under the admin; own row locked | ✅ | e2e |
 | Messaging | Real SMTP delivery, SMS gateway, WhatsApp template, signed webhook received by a real endpoint | ⏳ | needs credentials / receiver |
-| Load | k6 checkout + worker scripts | ⏳ | QA milestone |
+| Load | k6 browse / checkout / admin scenarios | 🟡 | scripts in `load/k6/`, not executed yet (`docs/LOAD_TESTING.md`) |
+| Backup | Backup + restore drill with row-count verification | ✅ | `scripts/restore-drill.sh`, run locally 2026-10-26 (`docs/BACKUP_RESTORE.md`) |

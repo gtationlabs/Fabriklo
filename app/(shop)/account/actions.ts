@@ -8,8 +8,9 @@ import { getCustomer } from "@/lib/account/session";
 import { publicEnv } from "@/lib/env";
 import { BD_DISTRICTS, divisionOf, normalizeBdPhone } from "@/lib/geo/bd";
 import { friendlyDbError } from "@/lib/db-errors";
-import { rateLimit } from "@/lib/security/rate-limit";
+import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { clientIp } from "@/lib/security/request";
+import { TURNSTILE_FAILED_MESSAGE, TURNSTILE_FIELD, verifyTurnstile } from "@/lib/security/turnstile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 /**
@@ -36,7 +37,8 @@ export async function registerCustomer(_prev: AccountState, fd: FormData): Promi
     .safeParse({ full_name: fd.get("full_name"), email: fd.get("email"), password: fd.get("password") });
   if (!parsed.success) return { ...idle, message: parsed.error.issues[0]?.message ?? "Check the fields.", values };
   const ip = clientIp(await headers());
-  if (!rateLimit(`register:${ip}`, 5, 60 * 60_000).ok) return { ...idle, message: "Too many sign-ups from this connection. Try later.", values };
+  if (!(await enforceRateLimit(`register:${ip}`, 5, 60 * 60_000)).ok) return { ...idle, message: "Too many sign-ups from this connection. Try later.", values };
+  if (!(await verifyTurnstile(fd.get(TURNSTILE_FIELD), ip)).ok) return { ...idle, message: TURNSTILE_FAILED_MESSAGE, values };
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.signUp({
@@ -59,9 +61,10 @@ export async function signInCustomer(_prev: AccountState, fd: FormData): Promise
   const parsed = z.object({ email, password: z.string().min(1).max(200) }).safeParse({ email: fd.get("email"), password: fd.get("password") });
   if (!parsed.success) return { ...idle, message: "Enter your email and password.", values };
   const ip = clientIp(await headers());
-  if (!rateLimit(`login-ip:${ip}`, 10, 15 * 60_000).ok || !rateLimit(`login-email:${parsed.data.email.toLowerCase()}`, 5, 15 * 60_000).ok) {
+  if (!(await enforceRateLimit(`login-ip:${ip}`, 10, 15 * 60_000)).ok || !(await enforceRateLimit(`login-email:${parsed.data.email.toLowerCase()}`, 5, 15 * 60_000)).ok) {
     return { ...idle, message: "Too many attempts. Try again in a few minutes.", values };
   }
+  if (!(await verifyTurnstile(fd.get(TURNSTILE_FIELD), ip)).ok) return { ...idle, message: TURNSTILE_FAILED_MESSAGE, values };
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) return { ...idle, message: "Email or password is incorrect.", values };
@@ -79,7 +82,7 @@ export async function requestPasswordReset(_prev: AccountState, fd: FormData): P
   const parsed = email.safeParse(fd.get("email"));
   if (!parsed.success) return { ...idle, message: "Enter a valid email.", values };
   const ip = clientIp(await headers());
-  if (!rateLimit(`reset:${ip}`, 5, 60 * 60_000).ok) return { ...idle, message: "Too many requests. Try later.", values };
+  if (!(await enforceRateLimit(`reset:${ip}`, 5, 60 * 60_000)).ok) return { ...idle, message: "Too many requests. Try later.", values };
   const supabase = await createSupabaseServerClient();
   await supabase.auth.resetPasswordForEmail(parsed.data, { redirectTo: `${publicEnv.NEXT_PUBLIC_SITE_URL}/auth/confirm?next=/account/reset` });
   // Always the same answer, whether or not the email exists.

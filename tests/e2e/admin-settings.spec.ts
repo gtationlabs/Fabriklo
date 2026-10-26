@@ -280,7 +280,7 @@ test.describe("theme, settings, staff and audit (admin)", () => {
 
     // Suspend → next request refused.
     await row.getByRole("button", { name: /^Suspend/ }).click();
-    await expect(page.getByText("Suspended. Their next request")).toBeVisible();
+    await expect(page.getByText(/^Suspended/)).toBeVisible();
     await ip.goto("/admin/orders");
     await expect(ip).toHaveURL(/\/admin\/login\?error=not_staff/);
     await ctx.close();

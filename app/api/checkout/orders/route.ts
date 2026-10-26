@@ -5,8 +5,9 @@ import { CheckoutError, placeOrder } from "@/lib/checkout/service";
 import { placeOrderSchema } from "@/lib/checkout/schema";
 import { PaymentError, startPayment } from "@/lib/payments/service";
 import { forbiddenOrigin, jsonError, rateLimited, zodError } from "@/lib/security/http";
-import { rateLimit } from "@/lib/security/rate-limit";
+import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { clientIp, isSameOrigin } from "@/lib/security/request";
+import { verifyTurnstile } from "@/lib/security/turnstile";
 
 const STATUS: Record<CheckoutError["code"], number> = {
   cart_missing: 404,
@@ -25,11 +26,13 @@ export async function POST(req: NextRequest) {
   if (!isSameOrigin(req.headers, req.url)) return forbiddenOrigin();
   const ip = clientIp(req.headers);
   // Orders are rarer than browsing: tight per-IP limit (edge/WAF limits apply on top in production).
-  const rl = rateLimit(`order:${ip}`, 8, 10 * 60_000);
+  const rl = await enforceRateLimit(`order:${ip}`, 8, 10 * 60_000);
   if (!rl.ok) return rateLimited(rl.retryAfterSeconds);
   if (Number(req.headers.get("content-length") ?? 0) > 5_000) return jsonError(413, "too_large", "Request too large.");
   const parsed = placeOrderSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return zodError(parsed.error);
+  const human = await verifyTurnstile(parsed.data.turnstileToken, ip);
+  if (!human.ok) return jsonError(403, "challenge_failed", "We couldn't confirm you're human. Please try again.");
   try {
     const order = await placeOrder(parsed.data);
     const headers = { "Cache-Control": "no-store" };

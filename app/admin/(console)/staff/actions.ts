@@ -84,6 +84,21 @@ export async function inviteStaff(_prev: StaffActionState, fd: FormData): Promis
   };
 }
 
+/**
+ * Best-effort global sign-out after a role change or suspension so the change
+ * takes effect immediately, not only on the next permission check. Needs the
+ * service key; silently skipped without it (the DB still refuses the next
+ * request, so this only shortens the window).
+ */
+async function revokeSessions(userId: string): Promise<boolean> {
+  try {
+    const { error } = await createSupabaseServiceClient().auth.admin.signOut(userId, "global");
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
 const memberSchema = z.object({ user_id: z.uuid() });
 
 export async function changeStaffRole(_prev: StaffActionState, fd: FormData): Promise<StaffActionState> {
@@ -95,8 +110,9 @@ export async function changeStaffRole(_prev: StaffActionState, fd: FormData): Pr
   const { data, error } = await supabase.from("staff_members").update({ role_code: parsed.data.role_code }).eq("user_id", parsed.data.user_id).select("user_id");
   if (error) return { ok: false, message: friendlyDbError(error) };
   if (!data?.length) return { ok: false, message: "That change is not allowed (your own row, or a super admin assignment without super admin rights)." };
+  const revoked = await revokeSessions(parsed.data.user_id);
   revalidatePath("/admin/staff");
-  return { ok: true, message: "Role updated. It applies to their next request." };
+  return { ok: true, message: revoked ? "Role updated and their sessions signed out." : "Role updated. It applies to their next request." };
 }
 
 export async function setStaffStatus(_prev: StaffActionState, fd: FormData): Promise<StaffActionState> {
@@ -108,8 +124,9 @@ export async function setStaffStatus(_prev: StaffActionState, fd: FormData): Pro
   const { data, error } = await supabase.from("staff_members").update({ status: parsed.data.status }).eq("user_id", parsed.data.user_id).select("user_id");
   if (error) return { ok: false, message: friendlyDbError(error) };
   if (!data?.length) return { ok: false, message: "That change is not allowed." };
+  const revoked = parsed.data.status === "suspended" ? await revokeSessions(parsed.data.user_id) : false;
   revalidatePath("/admin/staff");
-  return { ok: true, message: parsed.data.status === "suspended" ? "Suspended. Their next request to the admin is refused." : "Reactivated." };
+  return { ok: true, message: parsed.data.status === "suspended" ? (revoked ? "Suspended and signed out everywhere." : "Suspended. Their next request to the admin is refused.") : "Reactivated." };
 }
 
 export async function resetStaffMfa(_prev: StaffActionState, fd: FormData): Promise<StaffActionState> {

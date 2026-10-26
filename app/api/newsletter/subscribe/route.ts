@@ -4,8 +4,9 @@ import { after } from "next/server";
 import { z } from "zod";
 import { runAutomationTick } from "@/lib/automation/service";
 import { forbiddenOrigin, jsonError, rateLimited, zodError } from "@/lib/security/http";
-import { rateLimit } from "@/lib/security/rate-limit";
+import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { clientIp, isSameOrigin } from "@/lib/security/request";
+import { verifyTurnstile } from "@/lib/security/turnstile";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
 const schema = z.object({
@@ -13,17 +14,19 @@ const schema = z.object({
   source: z.enum(["footer", "checkout", "popup", "account"]).default("footer"),
   // Honeypot: real people leave it empty.
   website: z.string().max(0).optional(),
+  turnstileToken: z.string().max(2048).optional(),
 });
 
 /** Double opt-in subscribe. Always answers the same way so it cannot be used to check who is subscribed. */
 export async function POST(req: NextRequest) {
   if (!isSameOrigin(req.headers, req.url)) return forbiddenOrigin();
   const ip = clientIp(req.headers);
-  const rl = rateLimit(`newsletter:${ip}`, 5, 10 * 60_000);
+  const rl = await enforceRateLimit(`newsletter:${ip}`, 5, 10 * 60_000);
   if (!rl.ok) return rateLimited(rl.retryAfterSeconds);
   if (Number(req.headers.get("content-length") ?? 0) > 1_000) return jsonError(413, "too_large", "Request too large.");
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return zodError(parsed.error);
+  if (!(await verifyTurnstile(parsed.data.turnstileToken, ip)).ok) return jsonError(403, "challenge_failed", "We couldn't confirm you're human. Please try again.");
   const ipHash = createHash("sha256").update(`${ip}:${process.env.NOTIFY_TOKEN_SECRET ?? ""}`).digest("hex").slice(0, 32);
   const { error } = await createSupabaseServiceClient().rpc("newsletter_subscribe", { p_email: parsed.data.email, p_source: parsed.data.source, p_ip_hash: ipHash });
   if (error && error.hint !== "invalid_email") return jsonError(500, "unknown", "We couldn't save that right now. Please try again.");

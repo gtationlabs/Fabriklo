@@ -23,7 +23,7 @@ export function Message({ state }: { state: AccountState }) {
   );
 }
 
-export function LoginForm({ next, linkError }: { next: string; linkError?: boolean }) {
+export function LoginForm({ next, linkError, challenge }: { next: string; linkError?: boolean; challenge?: React.ReactNode }) {
   const [state, action, pending] = useActionState(signInCustomer, idle);
   return (
     <form action={action} className="space-y-4" aria-label="Sign in">
@@ -32,6 +32,7 @@ export function LoginForm({ next, linkError }: { next: string; linkError?: boole
       <Message state={state} />
       <label className="block text-sm font-medium">Email<input name="email" type="email" autoComplete="email" required defaultValue={state.values?.email ?? ""} className={input} /></label>
       <label className="block text-sm font-medium">Password<input name="password" type="password" autoComplete="current-password" required className={input} /></label>
+      {challenge}
       <button type="submit" disabled={pending} className={btn}>{pending ? "Signing in…" : "Sign in"}</button>
       <p className="text-sm text-muted">
         <Link href="/account/forgot" className="underline">Forgot your password?</Link> · New here?{" "}
@@ -41,7 +42,7 @@ export function LoginForm({ next, linkError }: { next: string; linkError?: boole
   );
 }
 
-export function RegisterForm({ next }: { next: string }) {
+export function RegisterForm({ next, challenge }: { next: string; challenge?: React.ReactNode }) {
   const [state, action, pending] = useActionState(registerCustomer, idle);
   return (
     <form action={action} className="space-y-4" aria-label="Create account">
@@ -53,6 +54,7 @@ export function RegisterForm({ next }: { next: string }) {
         Password <span className="font-normal text-muted">(10+ characters, letters and numbers)</span>
         <input name="password" type="password" autoComplete="new-password" minLength={10} required className={input} />
       </label>
+      {challenge}
       <button type="submit" disabled={pending} className={btn}>{pending ? "Creating…" : "Create account"}</button>
       <p className="text-sm text-muted">Already have one? <Link href={`/account/login?next=${encodeURIComponent(next)}`} className="underline">Sign in</Link></p>
     </form>

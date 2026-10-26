@@ -2,7 +2,7 @@
 
 Legend: ✅ built and tested · 🟡 partial · 🧱 schema/RLS only · ⏳ planned · 🔌 needs provider credentials
 
-_Last updated: 2026-10-26 (after slice 8). `IMPLEMENTATION_STATUS.md` has the detail and the launch blockers._
+_Last updated: 2026-10-26 (after slice 9). `IMPLEMENTATION_STATUS.md` has the detail and the launch blockers._
 
 | Feature | Status | Notes |
 | --- | --- | --- |
@@ -32,4 +32,9 @@ _Last updated: 2026-10-26 (after slice 8). `IMPLEMENTATION_STATUS.md` has the de
 | Shipping zones, COD limit, online hold settings | ✅ | Admin → Settings; demo values until the owner confirms |
 | Audit log viewer + CSV | ✅ | Masked secrets, filters, keyset paging |
 | CI | ✅ | Lint, unit, audit, DB lint, RLS tests, typecheck, build, E2E |
-| Hardening (nonce CSP, Turnstile, WAF, Sentry, load tests, backup drill) | ⏳ | Next milestone |
+| Nonce-based CSP, shared rate limiting, global staff sign-out | ✅ | Slice 9 |
+| Cloudflare Turnstile (4 forms) | ✅ 🔌 | Wired + unit-tested; inactive until both keys are set |
+| Sentry error monitoring (PII scrubbed) | ✅ 🔌 | Wired; inactive until DSNs are set; source maps not uploaded |
+| WAF / edge rate rules | ⏳ | Rule list written in `SECURITY_RUNBOOK.md`; configured on the zone by the owner |
+| Load tests (k6) | 🟡 | Scripts written; not executed yet |
+| Backup + restore drill | ✅ | Scripts + local drill done; production PITR to enable |

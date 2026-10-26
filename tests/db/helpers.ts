@@ -103,8 +103,29 @@ export async function createStaff(role: string, status = "active"): Promise<stri
   return id;
 }
 
+/**
+ * Fixture cleanup. Runs with triggers off so that removing a test super admin
+ * never trips the "last active super admin" guard (which is tested on purpose
+ * in admin-settings.test.ts, and which otherwise fails cleanup on a fresh CI
+ * database where the fixture is the only super admin).
+ */
 export async function deleteUsers(ids: string[]) {
-  if (ids.length) await admin(`delete from auth.users where id = any($1::uuid[])`, [ids]);
+  if (!ids.length) return;
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    await client.query("set local session_replication_role = replica");
+    await client.query(`delete from public.staff_members where user_id = any($1::uuid[])`, [ids]);
+    // Triggers back on so the auth.users delete cascades (profiles, addresses, …) as in production.
+    await client.query("set local session_replication_role = origin");
+    await client.query(`delete from auth.users where id = any($1::uuid[])`, [ids]);
+    await client.query("commit");
+  } catch (e) {
+    await client.query("rollback").catch(() => undefined);
+    throw e;
+  } finally {
+    client.release();
+  }
 }
 
 export async function oneVariant(where: string): Promise<{ id: string; product_id: string }> {

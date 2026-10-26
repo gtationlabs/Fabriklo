@@ -3,7 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { rateLimit } from "@/lib/security/rate-limit";
+import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { clientIp } from "@/lib/security/request";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -20,7 +20,7 @@ export async function acceptInvite(_prev: WelcomeState, fd: FormData): Promise<W
   const parsed = tokenSchema.safeParse({ token_hash: fd.get("token_hash"), type: fd.get("type") ?? "invite" });
   if (!parsed.success) return { error: "That link is not valid.", step: "accept" };
   const ip = clientIp(await headers());
-  if (!rateLimit(`staff-welcome:${ip}`, 10, 15 * 60_000).ok) return { error: "Too many attempts. Try again later.", step: "accept" };
+  if (!(await enforceRateLimit(`staff-welcome:${ip}`, 10, 15 * 60_000)).ok) return { error: "Too many attempts. Try again later.", step: "accept" };
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.verifyOtp({ token_hash: parsed.data.token_hash, type: parsed.data.type });
   if (error) return { error: "That link has expired or was already used. Ask an admin for a new one.", step: "accept" };
