@@ -118,7 +118,8 @@ body {
 }
 .store-tour__controls {
   position: absolute;
-  bottom: 1.5rem;
+  /* --fbk-bottom-ui is the height of any fixed bottom UI (cookie banner) so the dots stay reachable. */
+  bottom: calc(1.5rem + var(--fbk-bottom-ui, 0px));
   left: 0;
   right: 0;
   z-index: 50;

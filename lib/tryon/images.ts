@@ -1,4 +1,4 @@
-import sharp from "sharp";
+import sharp, { type Metadata } from "sharp";
 
 /**
  * Server-side checks for customer photos. The browser's checks are a courtesy;
@@ -24,7 +24,7 @@ export type PrepareError = "too_large" | "unsupported_type" | "undecodable" | "t
 export async function preparePhoto(input: Uint8Array): Promise<{ ok: true; photo: PreparedPhoto } | { ok: false; code: PrepareError }> {
   if (input.length > TRYON_MAX_BYTES) return { ok: false, code: "too_large" };
   if (!sniffImageType(input)) return { ok: false, code: "unsupported_type" };
-  let meta: sharp.Metadata;
+  let meta: Metadata;
   try {
     meta = await sharp(Buffer.from(input), { limitInputPixels: 40_000_000 }).metadata();
   } catch {

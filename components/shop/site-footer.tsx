@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { NewsletterForm } from "./newsletter-form";
 
 const COLUMNS = [
   { title: "Shop", links: [["/shop", "All products"], ["/men", "Men"], ["/women", "Women"], ["/collections/new-arrivals", "New arrivals"]] },
@@ -13,6 +14,7 @@ export function SiteFooter() {
         <div>
           <p className="font-display text-2xl">Fabriklo</p>
           <p className="mt-3 text-sm text-cream/70">Considered clothing for everyday life in Bangladesh. Prices in BDT.</p>
+          <NewsletterForm />
         </div>
         {COLUMNS.map((col) => (
           <nav key={col.title} aria-label={col.title}>

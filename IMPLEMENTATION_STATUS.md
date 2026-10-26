@@ -1,6 +1,6 @@
 # Implementation status
 
-_Last updated: 2026-10-26 · Milestone: foundation, slice 1 (catalog/admin), slice 2 (orders + cash on delivery), slice 3 (scroll store tour + hero editor), slice 4 (content pages + customer accounts), slice 5 (online payment + courier webhooks), slice 6 (AI virtual try-on)_
+_Last updated: 2026-10-26 · Milestone: foundation, slice 1 (catalog/admin), slice 2 (orders + cash on delivery), slice 3 (scroll store tour + hero editor), slice 4 (content pages + customer accounts), slice 5 (online payment + courier webhooks), slice 6 (AI virtual try-on), slice 7 (marketing, coupons, automation)_
 
 This file is the honest source of truth for what exists. It does **not** claim production readiness.
 
@@ -26,20 +26,23 @@ The repository contained only a README. The client supplied five 2D store render
 | Online payment (slice 5) | Migration 0011: `payment_transactions` / append-only `payment_events`, online orders **hold** stock until paid, service-role-only `payment_begin` / `payment_settle` (exact amount + currency + unique `val_id`, commits or re-reserves stock, flags gateway risk), `expire_unpaid_orders` cron, void-on-cancel trigger. Provider interface + SSLCOMMERZ v4 adapter (server-created session, IPN signature check, validation API as the authority, de-duplicated event log, browser return never trusted). Checkout "Pay online" option, `/order/payment` result page with retry, admin payment-attempt panel. Labelled **mock** gateway when no credentials (never in production without an explicit flag) | 9 DB tests + 9 unit + 2 E2E |
 | Couriers (slice 5) | `CourierAdapter` interface; manual adapter (unchanged staff entry); signed-webhook stubs for Pathao/Steadfast/RedX → `courier_apply_event` (dedupe on event id, state machine, auto-fulfil on hand-over, restock on return, unknown events stored not applied). Endpoint is 404 until a secret is configured | 1 DB test + unit + 1 E2E |
 | AI try-on (slice 6) | Migration 0012: queue RPCs (`tryon_create_job` with consent version, owned-photo check, garment support, one-in-flight, per-customer/site quotas, credit cap), worker RPCs (`claim` with SKIP LOCKED, `job_event` dedupe, `complete` into the owner's folder + usage ledger, `fail` with bounded retries), expiry list/purge + cron fallback, append-only consent/provider/usage ledgers, staff stats + limits RPCs. Server-side photo validation (magic bytes, decode, size/aspect, EXIF stripped, resized), private per-user buckets, worker that never runs in the browser, FASHN v1.6 adapter (base64 in/out for privacy), labelled demo mock without a key. Product-page panel (consent + disclosure, before/after, download, delete), `/account/try-on`, admin **AI try-on** page (counts, cap alert, limits, run queue) and garment upload on the product page | 7 unit + 7 DB + 3 E2E |
-| Tests | 44 unit · 84 DB/RLS/concurrency · 41 Playwright | all passing locally |
+| Marketing + automation (slice 7) | Migration 0013: `promotions` (coupon/automatic; percent/fixed/free delivery; order/category/collection/variant scope; min basket; first-order; one-per-customer; dates; redemption limits; priority + stackable) evaluated only in the DB (`private.evaluate_promotions`, deterministic stacking) and committed atomically by `create_order` under row locks with `coupon_redemptions`; `cart_apply_coupon` with DB attempt throttle; double opt-in newsletter (`newsletter_subscribe/confirm/unsubscribe`), `consent_events`, `unsubscribes` suppression, `private.marketing_allowed`; de-duplicated `marketing_events` from order/try-on/stock/signup triggers + cron (abandoned carts, weekly summary); `automation_rules` (trigger → conditions → action as data, validated, versioned, dry-run, hourly quota) with idempotent `automation_executions`; `notification_outbox` (retry/backoff, dead-letter, suppressed), `webhook_events`, templates (text only), segments/campaigns, `integration_connections` (secret names only), `attribution_events`. Server: worker (`runAutomationTick`) after checkout/newsletter + secret endpoint; SMTP via nodemailer, SMS/WhatsApp stubs, labelled mocks; signed outbound webhooks with allowlist + SSRF guard; checkout coupon field; footer newsletter; consent banner gating GA4/Pixel + first-touch attribution; announcement banner; Admin → Marketing (overview, coupons, newsletter + CSV + suppressions, templates, rules with tester/history/versions, outbox with retry + previews, campaigns, integrations + webhook allowlist) | 7 unit + 11 DB + 3 E2E |
+| Tests | 51 unit · 95 DB/RLS/concurrency · 44 Playwright | all passing locally |
 
 ### Routes working now
 
-Storefront: `/`, `/shop`, `/men`, `/women`, `/category/[slug]`, `/collections/[slug]`, `/search`, `/product/[slug]`, `/cart`, `/checkout`, `/order/success`, `/orders/track`, `/[slug]` (CMS pages: shipping, returns, size-guide, about, contact, privacy, terms), `/account`, `/account/login`, `/account/register`, `/account/forgot`, `/account/reset`, `/account/addresses`, `/account/orders/[number]`, `/auth/confirm`, `/order/payment` (+ `POST /order/payment/retry`), `/pay/mock/[tranId]` (mock only), `/account/try-on`
-Admin: `/admin/login`, `/admin/mfa`, `/admin`, `/admin/products`, `/admin/products/new`, `/admin/products/[id]`, `/admin/inventory`, `/admin/orders`, `/admin/orders/[id]`, `/admin/risk`, `/admin/content`, `/admin/content/preview`, `/admin/content/pages/[id]`, `/admin/tryon`
-API: `GET /api/products`, `GET /api/cart`, `POST|PATCH|DELETE /api/cart/items`, `POST /api/checkout/quote`, `POST /api/checkout/orders`, `POST /api/payments/[provider]/ipn`, `POST|GET /api/payments/[provider]/return`, `POST /api/payments/mock/complete` (mock only), `POST /api/couriers/[courier]/webhook`, `POST /api/tryon/uploads`, `POST /api/tryon/jobs`, `GET|DELETE /api/tryon/jobs/[id]`, `POST /api/tryon/worker` (secret)
+Storefront: `/`, `/shop`, `/men`, `/women`, `/category/[slug]`, `/collections/[slug]`, `/search`, `/product/[slug]`, `/cart`, `/checkout`, `/order/success`, `/orders/track`, `/[slug]` (CMS pages: shipping, returns, size-guide, about, contact, privacy, terms), `/account`, `/account/login`, `/account/register`, `/account/forgot`, `/account/reset`, `/account/addresses`, `/account/orders/[number]`, `/auth/confirm`, `/order/payment` (+ `POST /order/payment/retry`), `/pay/mock/[tranId]` (mock only), `/account/try-on`, `/newsletter/confirm`, `/newsletter/unsubscribe`
+Admin: `/admin/login`, `/admin/mfa`, `/admin`, `/admin/products`, `/admin/products/new`, `/admin/products/[id]`, `/admin/inventory`, `/admin/orders`, `/admin/orders/[id]`, `/admin/risk`, `/admin/content`, `/admin/content/preview`, `/admin/content/pages/[id]`, `/admin/tryon`, `/admin/marketing` (+ `/coupons`, `/coupons/new`, `/coupons/[id]`, `/newsletter`, `/newsletter/export`, `/templates`, `/rules`, `/rules/new`, `/rules/[id]`, `/outbox`, `/campaigns`, `/integrations`)
+API: `GET /api/products`, `GET /api/cart`, `POST|PATCH|DELETE /api/cart/items`, `POST /api/checkout/quote`, `POST /api/checkout/orders`, `POST /api/payments/[provider]/ipn`, `POST|GET /api/payments/[provider]/return`, `POST /api/payments/mock/complete` (mock only), `POST /api/couriers/[courier]/webhook`, `POST /api/tryon/uploads`, `POST /api/tryon/jobs`, `GET|DELETE /api/tryon/jobs/[id]`, `POST /api/tryon/worker` (secret), `POST|DELETE /api/checkout/coupon`, `POST /api/newsletter/subscribe`, `POST /api/automation/worker` (secret)
 
 ## Mock vs live
 
 - **SSLCOMMERZ**: adapter built and unit-tested with stubbed HTTP; **not yet run against the real sandbox** (needs the owner's sandbox store credentials and a public IPN URL). Until credentials exist, non-production builds use a **mock gateway** that is labelled as such everywhere it appears and moves no money. Production with no credentials offers cash on delivery only.
 - **Couriers**: manual entry only. Pathao/Steadfast/RedX webhook stubs exist behind per-courier secrets and are **not verified against live APIs**; shipment creation/labels are not built.
 - **FASHN try-on**: adapter built and unit-tested with stubbed HTTP; **not yet run against the real API** (needs `FASHN_API_KEY` and a real garment photo). Without a key, non-production builds use a **demo mock** that calls no provider and is labelled everywhere; production hides the feature.
-- No SMS or email provider is called anywhere. Nothing is presented as live.
+- **Email**: real SMTP delivery via nodemailer when `SMTP_URL` is set (not yet exercised against a real mailbox). Without it, non-production builds use a **mock** that delivers nothing and keeps a preview in the outbox; production dead-letters email with a visible error.
+- **SMS / WhatsApp**: adapter stubs (generic HTTP gateway; Meta Cloud API templates) are **not verified against any live gateway**; same mock/dead-letter rules. Nothing is presented as live; the admin labels the selected provider.
+- **Analytics tags**: GA4 and the Meta Pixel load only after cookie consent and only when their public ids are configured; CAPI server events are not sent.
 
 ## Next milestones (in order)
 
@@ -48,15 +51,16 @@ API: `GET /api/products`, `GET /api/cart`, `POST|PATCH|DELETE /api/cart/items`, 
 3. ~~CMS pages + customer accounts~~ done in slice 4 (theme versions still to do).
 4. ~~SSLCOMMERZ + courier adapters~~ done in slice 5 (real-sandbox run pending credentials).
 5. ~~AI try-on~~ done in slice 6 (real-API run pending key).
-6. Marketing/coupons/automations, analytics, staff management UI, audit viewer.
-7. Hardening: nonce CSP, Turnstile, WAF, Sentry, k6 load tests, backup/restore drill.
+6. ~~Marketing/coupons/automations~~ done in slice 7 (live SMTP/SMS/WhatsApp runs pending credentials).
+7. Theme versions, staff management UI, audit viewer, settings UI (shipping zones, COD limit).
+8. Hardening: nonce CSP, Turnstile, WAF, Sentry, k6 load tests, backup/restore drill.
 
 ## Launch blockers (must be cleared before production)
 
 - FASHN try-on has not been exercised against the real API (adapter, privacy choices and budget cap built; needs the key, a real garment photo and one run). Garment photos for real products must be uploaded by the owner; the seed uses a labelled placeholder drawing.
 - SSLCOMMERZ has not been exercised against the real sandbox (adapter + verification built; needs credentials, a public IPN URL and one end-to-end run before go-live). No gateway refund flow yet.
 - Shipping zone fees and the COD limit are **demo values**: the owner must set real rates (admin settings UI for zones is a later milestone; today they're edited in the database).
-- No order confirmation SMS/email: customers rely on the private tracking link shown after checkout.
+- Order confirmation email needs `SMTP_URL` plus an active `order.placed` rule (the seed ships templates, not rules); SMS/WhatsApp need a gateway adapter verified against the chosen provider. Until then customers rely on the private tracking link shown after checkout.
 - Order rate limit is per-instance in memory (8 orders / 10 min / IP); add edge limits + Turnstile before launch.
 - CSP still permits inline scripts; rate limiting is single-instance in-memory; no Turnstile/WAF yet.
 - No error monitoring; no backup/restore drill performed.
@@ -75,4 +79,4 @@ API: `GET /api/products`, `GET /api/cart`, `POST|PATCH|DELETE /api/cart/items`, 
 
 ## Credentials needed later (never paste into chat; set in the host secret store)
 
-SSLCOMMERZ store ID/password (sandbox first; set `SSLCOMMERZ_STORE_ID`, `SSLCOMMERZ_STORE_PASSWORD`) · courier webhook secrets / API keys (Pathao/Steadfast/RedX, if accounts exist) · `SUPABASE_SECRET_KEY` on the server for payment/courier handlers · FASHN API key (`FASHN_API_KEY`) + `TRYON_WORKER_SECRET` for the scheduler · Turnstile site/secret · SMTP/SMS/WhatsApp provider · Sentry DSN · Supabase production/staging projects. See `.env.example`.
+SSLCOMMERZ store ID/password (sandbox first; set `SSLCOMMERZ_STORE_ID`, `SSLCOMMERZ_STORE_PASSWORD`) · courier webhook secrets / API keys (Pathao/Steadfast/RedX, if accounts exist) · `SUPABASE_SECRET_KEY` on the server for payment/courier handlers · FASHN API key (`FASHN_API_KEY`) + `TRYON_WORKER_SECRET` for the scheduler · `SMTP_URL`/`SMTP_FROM`, `AUTOMATION_WORKER_SECRET`, `WEBHOOK_SIGNING_SECRET`, `NOTIFY_TOKEN_SECRET`, optional SMS/WhatsApp keys and `NEXT_PUBLIC_GA4_MEASUREMENT_ID`/`NEXT_PUBLIC_META_PIXEL_ID` · Turnstile site/secret · SMTP/SMS/WhatsApp provider · Sentry DSN · Supabase production/staging projects. See `.env.example`.

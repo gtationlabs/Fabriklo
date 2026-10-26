@@ -59,6 +59,8 @@ export type Quote = {
   issues: { sku: string; title: string; problem: "unavailable" | "insufficient_stock"; available: number }[];
   subtotal_minor: number;
   discount_minor: number;
+  promotions: { promotion_id: string; kind: "coupon" | "automatic"; code: string | null; name: string; discount_minor: number; free_shipping: boolean }[];
+  coupon: { code: string; status: string; name?: string; discount_minor?: number; min_subtotal_minor?: number } | null;
   tax_minor: number;
   shipping_minor: number | null;
   total_minor: number | null;

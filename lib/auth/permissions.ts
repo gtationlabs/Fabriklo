@@ -43,7 +43,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { href: "/admin/risk", label: "Risk review", permission: "risk.review", ready: true },
   { href: "/admin/content", label: "Content & hero", permission: "cms.edit", ready: true },
   { href: "/admin/tryon", label: "AI try-on", permission: "tryon.manage", ready: true },
-  { href: "/admin/marketing", label: "Marketing", permission: "marketing.read", ready: false },
+  { href: "/admin/marketing", label: "Marketing", permission: "marketing.read", ready: true },
   { href: "/admin/staff", label: "Staff", permission: "staff.manage", ready: false },
   { href: "/admin/audit", label: "Audit log", permission: "audit.read", ready: false },
   { href: "/admin/settings", label: "Settings", permission: "settings.manage", ready: false },

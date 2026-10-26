@@ -32,6 +32,19 @@ function clearKey() {
   }
 }
 
+const COUPON_TEXT: Record<string, string> = {
+  applied: "Coupon applied.",
+  invalid: "We don't recognise that code.",
+  inactive: "That code is no longer active.",
+  not_started: "That code isn't valid yet.",
+  expired: "That code has expired.",
+  exhausted: "That code has been fully redeemed.",
+  min_subtotal: "Your basket is below the minimum for that code.",
+  not_eligible: "That code doesn't apply to the items in your cart.",
+  first_order: "That code is for first orders only.",
+  already_used: "That code has already been used on your account.",
+};
+
 const inputCls =
   "mt-1 w-full rounded border border-line bg-white px-3 py-2.5 text-espresso focus:border-bronze focus:outline-none focus:ring-2 focus:ring-bronze/30 aria-[invalid=true]:border-danger";
 
@@ -57,6 +70,9 @@ export function CheckoutForm({
   const [quote, setQuote] = useState<Quote | null>(null);
 
   const [quoting, setQuoting] = useState(false);
+  const [couponInput, setCouponInput] = useState("");
+  const [couponBusy, setCouponBusy] = useState(false);
+  const [couponMsg, setCouponMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -88,6 +104,40 @@ export function CheckoutForm({
   useEffect(() => {
     if (formError) errorRef.current?.focus();
   }, [formError]);
+
+  async function applyCode() {
+    const code = couponInput.trim();
+    if (code.length < 3 || couponBusy) return;
+    setCouponBusy(true);
+    setCouponMsg(null);
+    try {
+      const res = await fetch("/api/checkout/coupon", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code }) });
+      const body = (await res.json().catch(() => null)) as { status?: string; code?: string; error?: { message?: string } } | null;
+      if (!res.ok) {
+        setCouponMsg({ ok: false, text: body?.error?.message ?? "We couldn't check that code." });
+        return;
+      }
+      const status = body?.status ?? "invalid";
+      setCouponMsg({ ok: status === "applied", text: COUPON_TEXT[status] ?? COUPON_TEXT.invalid! });
+      if (status === "applied") setCouponInput("");
+      await loadQuote(district);
+    } catch {
+      setCouponMsg({ ok: false, text: "Network problem. Please try again." });
+    } finally {
+      setCouponBusy(false);
+    }
+  }
+
+  async function removeCode() {
+    setCouponBusy(true);
+    try {
+      await fetch("/api/checkout/coupon", { method: "DELETE" });
+      setCouponMsg(null);
+      await loadQuote(district);
+    } finally {
+      setCouponBusy(false);
+    }
+  }
 
   // A prefilled district needs its delivery quote once the form is on screen.
   const prefillDistrict = prefill?.district ?? "";
@@ -165,7 +215,7 @@ export function CheckoutForm({
         return;
       }
       const code = body?.error?.code as string | undefined;
-      if (code === "quote_changed" || code === "stock_unavailable") {
+      if (code === "quote_changed" || code === "stock_unavailable" || code === "coupon_invalid") {
         clearKey(); // the next attempt is a new order request
         await loadQuote(district);
       }
@@ -336,11 +386,58 @@ export function CheckoutForm({
             <Link href="/cart" className="underline">Update cart</Link>
           </p>
         ) : null}
+        <div className="mt-4 border-t border-line pt-4" data-testid="coupon-box">
+          {quote?.coupon?.status === "applied" ? (
+            <p className="flex items-center justify-between text-sm">
+              <span>
+                Code <strong className="font-mono">{quote.coupon.code}</strong> applied
+              </span>
+              <button type="button" onClick={removeCode} disabled={couponBusy} className="text-xs underline underline-offset-4">
+                Remove
+              </button>
+            </p>
+          ) : (
+            <div className="flex gap-2">
+              <label htmlFor={`${formId}-coupon`} className="sr-only">Coupon code</label>
+              <input
+                id={`${formId}-coupon`}
+                value={couponInput}
+                onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void applyCode();
+                  }
+                }}
+                placeholder="Coupon code"
+                autoCapitalize="characters"
+                maxLength={32}
+                className="w-full rounded border border-line bg-white px-3 py-2 text-sm uppercase"
+              />
+              <button type="button" onClick={applyCode} disabled={couponBusy || couponInput.trim().length < 3} className="rounded border border-espresso px-3 py-2 text-sm font-medium disabled:opacity-50">
+                Apply
+              </button>
+            </div>
+          )}
+          {couponMsg ? (
+            <p role={couponMsg.ok ? "status" : "alert"} className={`mt-2 text-xs ${couponMsg.ok ? "text-success" : "text-danger"}`}>
+              {couponMsg.text}
+            </p>
+          ) : null}
+        </div>
         <dl className="mt-4 space-y-2 border-t border-line pt-4 text-sm">
           <div className="flex justify-between">
             <dt>Subtotal</dt>
             <dd>{formatBDT(quote?.subtotal_minor ?? cart.subtotal_minor)}</dd>
           </div>
+          {(quote?.promotions ?? []).filter((p) => p.discount_minor > 0 || p.free_shipping).map((p) => (
+            <div key={p.promotion_id} className="flex justify-between text-success">
+              <dt>
+                {p.free_shipping && p.discount_minor === 0 ? "Free delivery" : "Discount"} <span className="text-muted">· {p.code ?? p.name}</span>
+              </dt>
+              <dd data-testid="checkout-discount">{p.discount_minor > 0 ? `−${formatBDT(p.discount_minor)}` : ""}</dd>
+            </div>
+          ))}
           <div className="flex justify-between">
             <dt>Delivery{quote?.zone ? <span className="text-muted"> · {quote.zone.name}</span> : null}</dt>
             <dd data-testid="checkout-shipping">

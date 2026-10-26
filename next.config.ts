@@ -4,6 +4,9 @@ const isDev = process.env.NODE_ENV !== "production";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const supabaseOrigin = supabaseUrl ? new URL(supabaseUrl).origin : "";
 const supabaseWs = supabaseOrigin.replace(/^http/, "ws");
+// Analytics tags are only loaded with the visitor's consent, and only when configured.
+const ga4 = process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID ? ["https://www.googletagmanager.com", "https://*.google-analytics.com", "https://*.analytics.google.com"] : [];
+const pixel = process.env.NEXT_PUBLIC_META_PIXEL_ID ? ["https://connect.facebook.net", "https://www.facebook.com"] : [];
 
 /**
  * Content Security Policy. Scripts are limited to our own origin; 'unsafe-inline'
@@ -13,11 +16,11 @@ const supabaseWs = supabaseOrigin.replace(/^http/, "ws");
  */
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} ${ga4[0] ?? ""} ${pixel[0] ?? ""}`.replace(/\s+/g, " ").trim(),
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: ${supabaseOrigin}`.trim(),
+  `img-src 'self' data: blob: ${supabaseOrigin} ${[...ga4, ...pixel].join(" ")}`.replace(/\s+/g, " ").trim(),
   "font-src 'self' data:",
-  `connect-src 'self' ${supabaseOrigin} ${supabaseWs}`.trim(),
+  `connect-src 'self' ${supabaseOrigin} ${supabaseWs} ${[...ga4, ...pixel].join(" ")}`.replace(/\s+/g, " ").trim(),
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

@@ -1,4 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { after } from "next/server";
+import { runAutomationTick } from "@/lib/automation/service";
 import { CheckoutError, placeOrder } from "@/lib/checkout/service";
 import { placeOrderSchema } from "@/lib/checkout/schema";
 import { PaymentError, startPayment } from "@/lib/payments/service";
@@ -12,6 +14,7 @@ const STATUS: Record<CheckoutError["code"], number> = {
   stock_unavailable: 409,
   no_delivery: 422,
   quote_changed: 409,
+  coupon_invalid: 409,
   cod_unavailable: 422,
   payment_unavailable: 422,
   invalid_input: 422,
@@ -30,6 +33,8 @@ export async function POST(req: NextRequest) {
   try {
     const order = await placeOrder(parsed.data);
     const headers = { "Cache-Control": "no-store" };
+    // Order events (confirmation mail, alerts) are processed by the automation worker after the response.
+    if (!order.replayed) after(() => runAutomationTick({ events: 100, messages: 20 }).catch(() => undefined));
     if (order.paymentMethod === "sslcommerz" && order.paymentStatus === "awaiting_payment") {
       // The order exists (stock on hold). Start the gateway session server-side and send the customer there.
       try {
