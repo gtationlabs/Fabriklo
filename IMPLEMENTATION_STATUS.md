@@ -1,6 +1,6 @@
 # Implementation status
 
-_Last updated: 2026-10-26 · Milestone: foundation, slice 1 (catalog/admin), slice 2 (orders + cash on delivery), slice 3 (scroll store tour + hero editor), slice 4 (content pages + customer accounts)_
+_Last updated: 2026-10-26 · Milestone: foundation, slice 1 (catalog/admin), slice 2 (orders + cash on delivery), slice 3 (scroll store tour + hero editor), slice 4 (content pages + customer accounts), slice 5 (online payment + courier webhooks)_
 
 This file is the honest source of truth for what exists. It does **not** claim production readiness.
 
@@ -23,31 +23,35 @@ The repository contained only a README. The client supplied five 2D store render
 | Store tour (slice 3) | GSAP ScrollTrigger 2.5D walkthrough over the 5 renders (push-in, drift, cross-dissolves, reversible), scene dots, skip, inert hidden scenes, reduced-motion / no-JS static panels, softer mobile motion. Migration 0009: draft scenes vs immutable published versions, publish/rollback RPCs (cms.publish), reorder, draft settings, stricter internal-link CHECK. Admin "Content & hero" editor with draft preview and version history | 5 hero DB tests + 10 tour E2E (desktop + mobile) + 1 editor E2E |
 | Content pages (slice 4) | Migration 0010: draft blocks vs immutable published versions, allow-listed block types enforced in Zod **and** SQL, publish/rollback/unpublish RPCs, reserved-slug guard, publish-permission trigger. `/[slug]` renderer (plain text, internal links only). Admin block editor with preview, SEO fields, version history. 7 starter template pages seeded (marked as templates) | 3 DB tests + 2 E2E |
 | Customer accounts (slice 4) | Sign up / sign in / sign out / password reset (generic messages, rate limits), `/auth/confirm` link handler, account page with order history, order detail via re-derived tracking token, addresses (up to 10, one default), profile edits. Orders placed while signed in are linked to the account; checkout prefills the default address | 4 DB tests + 2 E2E |
-| Tests | 28 unit · 67 DB/RLS/concurrency · 35 Playwright | all passing locally |
+| Online payment (slice 5) | Migration 0011: `payment_transactions` / append-only `payment_events`, online orders **hold** stock until paid, service-role-only `payment_begin` / `payment_settle` (exact amount + currency + unique `val_id`, commits or re-reserves stock, flags gateway risk), `expire_unpaid_orders` cron, void-on-cancel trigger. Provider interface + SSLCOMMERZ v4 adapter (server-created session, IPN signature check, validation API as the authority, de-duplicated event log, browser return never trusted). Checkout "Pay online" option, `/order/payment` result page with retry, admin payment-attempt panel. Labelled **mock** gateway when no credentials (never in production without an explicit flag) | 9 DB tests + 9 unit + 2 E2E |
+| Couriers (slice 5) | `CourierAdapter` interface; manual adapter (unchanged staff entry); signed-webhook stubs for Pathao/Steadfast/RedX → `courier_apply_event` (dedupe on event id, state machine, auto-fulfil on hand-over, restock on return, unknown events stored not applied). Endpoint is 404 until a secret is configured | 1 DB test + unit + 1 E2E |
+| Tests | 37 unit · 77 DB/RLS/concurrency · 38 Playwright | all passing locally |
 
 ### Routes working now
 
-Storefront: `/`, `/shop`, `/men`, `/women`, `/category/[slug]`, `/collections/[slug]`, `/search`, `/product/[slug]`, `/cart`, `/checkout`, `/order/success`, `/orders/track`, `/[slug]` (CMS pages: shipping, returns, size-guide, about, contact, privacy, terms), `/account`, `/account/login`, `/account/register`, `/account/forgot`, `/account/reset`, `/account/addresses`, `/account/orders/[number]`, `/auth/confirm`
+Storefront: `/`, `/shop`, `/men`, `/women`, `/category/[slug]`, `/collections/[slug]`, `/search`, `/product/[slug]`, `/cart`, `/checkout`, `/order/success`, `/orders/track`, `/[slug]` (CMS pages: shipping, returns, size-guide, about, contact, privacy, terms), `/account`, `/account/login`, `/account/register`, `/account/forgot`, `/account/reset`, `/account/addresses`, `/account/orders/[number]`, `/auth/confirm`, `/order/payment` (+ `POST /order/payment/retry`), `/pay/mock/[tranId]` (mock only)
 Admin: `/admin/login`, `/admin/mfa`, `/admin`, `/admin/products`, `/admin/products/new`, `/admin/products/[id]`, `/admin/inventory`, `/admin/orders`, `/admin/orders/[id]`, `/admin/risk`, `/admin/content`, `/admin/content/preview`, `/admin/content/pages/[id]`
-API: `GET /api/products`, `GET /api/cart`, `POST|PATCH|DELETE /api/cart/items`, `POST /api/checkout/quote`, `POST /api/checkout/orders`
+API: `GET /api/products`, `GET /api/cart`, `POST|PATCH|DELETE /api/cart/items`, `POST /api/checkout/quote`, `POST /api/checkout/orders`, `POST /api/payments/[provider]/ipn`, `POST|GET /api/payments/[provider]/return`, `POST /api/payments/mock/complete` (mock only), `POST /api/couriers/[courier]/webhook`
 
 ## Mock vs live
 
-There are **no** live third-party integrations yet. No payment, courier, SMS, email or AI provider is called anywhere. Nothing is presented as live. Cash on delivery needs no provider; courier details are typed in by staff.
+- **SSLCOMMERZ**: adapter built and unit-tested with stubbed HTTP; **not yet run against the real sandbox** (needs the owner's sandbox store credentials and a public IPN URL). Until credentials exist, non-production builds use a **mock gateway** that is labelled as such everywhere it appears and moves no money. Production with no credentials offers cash on delivery only.
+- **Couriers**: manual entry only. Pathao/Steadfast/RedX webhook stubs exist behind per-courier secrets and are **not verified against live APIs**; shipment creation/labels are not built.
+- No SMS, email or AI provider is called anywhere. Nothing is presented as live.
 
 ## Next milestones (in order)
 
 1. ~~Orders + COD~~ done in slice 2.
 2. ~~Store tour~~ done in slice 3.
 3. ~~CMS pages + customer accounts~~ done in slice 4 (theme versions still to do).
-4. SSLCOMMERZ sandbox, courier adapters (manual first).
+4. ~~SSLCOMMERZ + courier adapters~~ done in slice 5 (real-sandbox run pending credentials).
 5. AI try-on (FASHN) with private storage, queue worker, quotas, deletion.
 6. Marketing/coupons/automations, analytics, staff management UI, audit viewer.
 7. Hardening: nonce CSP, Turnstile, WAF, Sentry, k6 load tests, backup/restore drill.
 
 ## Launch blockers (must be cleared before production)
 
-- Online payment (SSLCOMMERZ) and its verification not built; COD only.
+- SSLCOMMERZ has not been exercised against the real sandbox (adapter + verification built; needs credentials, a public IPN URL and one end-to-end run before go-live). No gateway refund flow yet.
 - Shipping zone fees and the COD limit are **demo values**: the owner must set real rates (admin settings UI for zones is a later milestone; today they're edited in the database).
 - No order confirmation SMS/email: customers rely on the private tracking link shown after checkout.
 - Order rate limit is per-instance in memory (8 orders / 10 min / IP); add edge limits + Turnstile before launch.
@@ -68,4 +72,4 @@ There are **no** live third-party integrations yet. No payment, courier, SMS, em
 
 ## Credentials needed later (never paste into chat; set in the host secret store)
 
-SSLCOMMERZ store ID/password (sandbox first) · courier API keys (Pathao/Steadfast/RedX, if accounts exist) · FASHN API key · Turnstile site/secret · SMTP/SMS/WhatsApp provider · Sentry DSN · Supabase production/staging projects. See `.env.example`.
+SSLCOMMERZ store ID/password (sandbox first; set `SSLCOMMERZ_STORE_ID`, `SSLCOMMERZ_STORE_PASSWORD`) · courier webhook secrets / API keys (Pathao/Steadfast/RedX, if accounts exist) · `SUPABASE_SECRET_KEY` on the server for payment/courier handlers · FASHN API key · Turnstile site/secret · SMTP/SMS/WhatsApp provider · Sentry DSN · Supabase production/staging projects. See `.env.example`.

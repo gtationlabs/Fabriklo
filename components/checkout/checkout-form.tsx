@@ -37,10 +37,23 @@ const inputCls =
 
 export type CheckoutPrefill = { name: string; phone: string; email: string; district: string; area: string; addressLine: string; postalCode: string };
 
-export function CheckoutForm({ cart, divisions, prefill }: { cart: Cart; divisions: Record<string, readonly string[]>; prefill?: CheckoutPrefill }) {
+export type OnlineOffer = { label: string; isMock: boolean; isLive: boolean } | null;
+
+export function CheckoutForm({
+  cart,
+  divisions,
+  prefill,
+  online = null,
+}: {
+  cart: Cart;
+  divisions: Record<string, readonly string[]>;
+  prefill?: CheckoutPrefill;
+  online?: OnlineOffer;
+}) {
   const router = useRouter();
   const formId = useId();
   const [district, setDistrict] = useState(prefill?.district ?? "");
+  const [paymentMethod, setPaymentMethod] = useState<"cod" | "sslcommerz">("cod");
   const [quote, setQuote] = useState<Quote | null>(null);
 
   const [quoting, setQuoting] = useState(false);
@@ -109,8 +122,12 @@ export function CheckoutForm({ cart, divisions, prefill }: { cart: Cart; divisio
       setFormError("Some items in your cart are no longer available. Please update your cart.");
       return;
     }
-    if (!quote.cod_available) {
+    if (paymentMethod === "cod" && !quote.cod_available) {
       setFormError("Cash on delivery isn't available for this order.");
+      return;
+    }
+    if (paymentMethod === "sslcommerz" && quote.total_minor < 1000) {
+      setFormError("Online payment needs an order total of at least ৳10.");
       return;
     }
 
@@ -130,14 +147,20 @@ export function CheckoutForm({ cart, divisions, prefill }: { cart: Cart; divisio
           addressLine: get("addressLine"),
           postalCode: get("postalCode") || undefined,
           note: get("note") || undefined,
-          paymentMethod: "cod",
+          paymentMethod,
           expectedTotalMinor: quote.total_minor,
         }),
       });
       const body = await res.json().catch(() => ({}));
       if (res.ok) {
         clearKey();
-        router.replace("/order/success");
+        const to = typeof body?.redirectUrl === "string" ? (body.redirectUrl as string) : "/order/success";
+        if (/^https?:\/\//.test(to)) {
+          // Off to the payment gateway (its URL came from our server, not the page).
+          window.location.assign(to);
+          return;
+        }
+        router.replace(to);
         router.refresh();
         return;
       }
@@ -267,14 +290,31 @@ export function CheckoutForm({ cart, divisions, prefill }: { cart: Cart; divisio
 
         <fieldset>
           <legend className="font-semibold text-espresso">Payment</legend>
-          <label className="mt-3 flex items-start gap-3 rounded border border-bronze bg-cream p-4">
-            <input type="radio" name="paymentMethod" value="cod" defaultChecked className="mt-1 accent-bronze" />
-            <span>
-              <span className="font-medium text-espresso">Cash on delivery</span>
-              <span className="block text-sm text-muted">Pay the rider in cash when your parcel arrives.</span>
-            </span>
-          </label>
-          <p className="mt-2 text-xs text-muted">Online card and mobile banking payment will be added with SSLCOMMERZ.</p>
+          <div className="mt-3 space-y-3">
+            <label className={`flex items-start gap-3 rounded border p-4 ${paymentMethod === "cod" ? "border-bronze bg-cream" : "border-line bg-white"}`}>
+              <input type="radio" name="paymentMethod" value="cod" checked={paymentMethod === "cod"} onChange={() => setPaymentMethod("cod")} className="mt-1 accent-bronze" />
+              <span>
+                <span className="font-medium text-espresso">Cash on delivery</span>
+                <span className="block text-sm text-muted">Pay the rider in cash when your parcel arrives.</span>
+              </span>
+            </label>
+            {online ? (
+              <label className={`flex items-start gap-3 rounded border p-4 ${paymentMethod === "sslcommerz" ? "border-bronze bg-cream" : "border-line bg-white"}`}>
+                <input type="radio" name="paymentMethod" value="sslcommerz" checked={paymentMethod === "sslcommerz"} onChange={() => setPaymentMethod("sslcommerz")} className="mt-1 accent-bronze" />
+                <span>
+                  <span className="font-medium text-espresso">Pay online</span>
+                  <span className="block text-sm text-muted">Cards and mobile banking via {online.label}. Your items stay reserved while you pay.</span>
+                  {online.isMock ? (
+                    <span className="mt-1 block text-xs font-semibold text-danger">Sandbox mock: no real money moves. Not a live gateway.</span>
+                  ) : !online.isLive ? (
+                    <span className="mt-1 block text-xs font-semibold text-bronze-strong">Sandbox mode: test cards only, no real charge.</span>
+                  ) : null}
+                </span>
+              </label>
+            ) : (
+              <p className="text-xs text-muted">Online payment is not switched on yet.</p>
+            )}
+          </div>
         </fieldset>
       </div>
 
@@ -317,7 +357,7 @@ export function CheckoutForm({ cart, divisions, prefill }: { cart: Cart; divisio
             Usually delivered in {quote.zone.min_days}–{quote.zone.max_days} days.
           </p>
         ) : null}
-        {district && quote && !quote.cod_available && quote.total_minor != null ? (
+        {district && quote && paymentMethod === "cod" && !quote.cod_available && quote.total_minor != null ? (
           <p className="mt-2 text-sm text-danger">Cash on delivery isn&apos;t available for this order total.</p>
         ) : null}
         <button
@@ -325,7 +365,7 @@ export function CheckoutForm({ cart, divisions, prefill }: { cart: Cart; divisio
           disabled={submitting || quoting}
           className="mt-6 w-full rounded bg-espresso px-5 py-3 font-medium text-cream hover:bg-charcoal disabled:cursor-wait disabled:opacity-70"
         >
-          {submitting ? "Placing order…" : "Place order (cash on delivery)"}
+          {submitting ? (paymentMethod === "cod" ? "Placing order…" : "Starting payment…") : paymentMethod === "cod" ? "Place order (cash on delivery)" : "Continue to payment"}
         </button>
         <p className="mt-2 text-xs text-muted">Prices and stock are confirmed on our server when you place the order.</p>
       </aside>

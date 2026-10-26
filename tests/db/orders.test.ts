@@ -202,7 +202,7 @@ describe("create_order", () => {
       expect(await hintOf(sql, () => placeOrder(sql, draftCart, { expected: 0 }))).toBe("stock_unavailable");
 
       const ok = await cartWith(sql, variantId, 1);
-      expect(await hintOf(sql, () => placeOrder(sql, ok, { method: "sslcommerz" }))).toBe("payment_unavailable");
+      expect(await hintOf(sql, () => placeOrder(sql, ok, { method: "bkash" }))).toBe("payment_unavailable");
     }));
 
   it("validates phone and district on the server", () =>

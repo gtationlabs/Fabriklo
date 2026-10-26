@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { CheckoutError, placeOrder } from "@/lib/checkout/service";
 import { placeOrderSchema } from "@/lib/checkout/schema";
+import { PaymentError, startPayment } from "@/lib/payments/service";
 import { forbiddenOrigin, jsonError, rateLimited, zodError } from "@/lib/security/http";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { clientIp, isSameOrigin } from "@/lib/security/request";
@@ -28,9 +29,21 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return zodError(parsed.error);
   try {
     const order = await placeOrder(parsed.data);
+    const headers = { "Cache-Control": "no-store" };
+    if (order.paymentMethod === "sslcommerz" && order.paymentStatus === "awaiting_payment") {
+      // The order exists (stock on hold). Start the gateway session server-side and send the customer there.
+      try {
+        const { redirectUrl } = await startPayment(order.orderNumber, order.trackingToken);
+        return NextResponse.json({ orderNumber: order.orderNumber, replayed: order.replayed, redirectUrl }, { status: order.replayed ? 200 : 201, headers });
+      } catch (e) {
+        // The order is kept: the payment result page offers a retry.
+        const msg = e instanceof PaymentError ? e.message : "We couldn't start the payment.";
+        return NextResponse.json({ orderNumber: order.orderNumber, replayed: order.replayed, redirectUrl: "/order/payment", paymentError: msg }, { status: 201, headers });
+      }
+    }
     return NextResponse.json(
-      { orderNumber: order.orderNumber, replayed: order.replayed },
-      { status: order.replayed ? 200 : 201, headers: { "Cache-Control": "no-store" } },
+      { orderNumber: order.orderNumber, replayed: order.replayed, redirectUrl: order.paymentMethod === "cod" ? "/order/success" : "/order/payment" },
+      { status: order.replayed ? 200 : 201, headers },
     );
   } catch (e) {
     if (e instanceof CheckoutError) return jsonError(STATUS[e.code], e.code, e.message);

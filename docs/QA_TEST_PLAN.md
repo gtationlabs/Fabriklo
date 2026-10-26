@@ -39,6 +39,16 @@ Status legend: ✅ automated and passing · 🟡 partial · ⏳ not built yet.
 | Orders/COD | Tracking needs order number + HMAC token; output minimised (first name, masked phone, district) | ✅ | db + e2e |
 | Orders/COD | Guest checkout → success → tracking → staff fulfil → cash collected → customer sees Delivered | ✅ | `tests/e2e/checkout.spec.ts` |
 | Risk | Third order from one phone in 24h flags review and blocks fulfilment until approved; reject cancels + restocks | ✅ | db |
-| Payments | SSLCOMMERZ IPN replay/mismatch/invalid | ⏳ | payment milestone |
+| Payments | Online order holds stock (active reservation, expiry) instead of committing; setting off / tiny totals refused; anon cannot call begin/settle/log; status needs the tracking token | ✅ | `tests/db/payments.test.ts` |
+| Payments | Settle pays only with exact amount + currency + val_id; wrong amount/currency/missing id recorded as `rejected`; stock committed once; replays (same/different val_id, later "failed") change nothing; a val_id pays one transaction only | ✅ | db |
+| Payments | Failed/cancelled attempts keep the order payable with the next attempt number; gateway messages de-duplicated; late validated payment still counts | ✅ | db |
+| Payments | Expiry job cancels only lapsed unpaid orders, marks attempts expired, releases stock, is idempotent; staff cancel of awaiting order releases the hold and voids payment | ✅ | db |
+| Payments | Adapter: session body/URL, redirect host allow-list, validation API mapping + amount parsing, IPN `verify_sign`, provider selection rules (mock never silently in production) | ✅ | `tests/unit/payments.test.ts` |
+| Payments | Mock gateway E2E: checkout → labelled mock → forged "success" return ignored → mock IPN route absent → simulated success → paid + stock committed + event trail; closed attempt disabled; staff see attempt | ✅ | `tests/e2e/payments.spec.ts` |
+| Payments | Fail → retry (attempt 2) → cancel → retry (attempt 3) → success | ✅ | e2e |
+| Payments | Real SSLCOMMERZ sandbox round-trip (session, hosted page, IPN, validation) | ⏳ | needs owner's sandbox credentials + public IPN URL |
+| Couriers | Webhook HMAC verification, batch parsing; `courier_apply_event` dedupes, enforces transitions, auto-fulfils on hand-over, stores unknown tracking/unmapped statuses unapplied | ✅ | unit + db |
+| Couriers | Unconfigured couriers and `manual` answer 404 | ✅ | e2e |
+| Couriers | Real Pathao/Steadfast/RedX payloads and signatures | ⏳ | needs merchant accounts |
 | AI try-on | Upload validation, consent, quotas, deletion | ⏳ | try-on milestone |
 | Load | k6 checkout + worker scripts | ⏳ | QA milestone |

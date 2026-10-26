@@ -19,7 +19,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
   const can = (p: string) => staff.permissions.includes(p as never);
   const supabase = await createSupabaseServerClient();
 
-  const [{ data: order }, { data: items }, { data: events }, { data: notes }, { data: shipment }, { data: signals }] = await Promise.all([
+  const [{ data: order }, { data: items }, { data: events }, { data: notes }, { data: shipment }, { data: signals }, { data: payments }] = await Promise.all([
     supabase.from("orders").select("*").eq("id", id).maybeSingle(),
     supabase.from("order_items").select("id, product_title, sku, size, color, unit_price_minor, quantity, line_total_minor").eq("order_id", id).order("created_at"),
     supabase.from("order_status_events").select("id, occurred_at, field, from_value, to_value, actor_kind, reason, customer_visible").eq("order_id", id).order("id"),
@@ -28,7 +28,12 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
     can("risk.review")
       ? supabase.from("risk_signals").select("id, rule_code, level, explanation, created_at").eq("order_id", id).order("id")
       : Promise.resolve({ data: [] as { id: number; rule_code: string; level: string; explanation: string; created_at: string }[] }),
+    supabase.from("payment_transactions").select("id, provider, tran_id, attempt, status, amount_minor, currency, gateway_val_id, bank_tran_id, card_type, gateway_risk_level, settled_at, created_at").eq("order_id", id).order("attempt"),
   ]);
+  const txIds = (payments ?? []).map((t) => t.id);
+  const { data: payEvents } = txIds.length
+    ? await supabase.from("payment_events").select("id, transaction_id, kind, status, created_at").in("transaction_id", txIds).order("id")
+    : { data: [] as { id: number; transaction_id: string | null; kind: string; status: string | null; created_at: string }[] };
   if (!order) notFound();
   const addr = order.shipping_address as Address;
   const next = (field: string) => NEXT_STATES[field]?.[order[field] as string] ?? [];
@@ -42,7 +47,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
           <h1 className="font-display text-3xl font-semibold text-espresso">
             {order.order_number} {order.is_demo ? <DemoBadge className="align-middle" /> : null}
           </h1>
-          <p className="text-sm text-muted">Placed {dateFmt.format(new Date(order.placed_at))} · {order.payment_method === "cod" ? "Cash on delivery" : "Online payment"}</p>
+          <p className="text-sm text-muted">Placed {dateFmt.format(new Date(order.placed_at))} · {order.payment_method === "cod" ? "Cash on delivery" : (payments ?? []).some((t) => t.provider === "mock") ? "Online payment (sandbox mock, not a real payment)" : "Online payment"}</p>
         </div>
         <div className="flex flex-wrap gap-2" data-testid="order-statuses">
           <StatusPill status={order.fulfillment_status} />
@@ -85,6 +90,31 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
             </address>
             {order.customer_note ? <p className="mt-2"><span className="font-medium">Customer note:</span> {order.customer_note}</p> : null}
           </section>
+
+          {order.payment_method !== "cod" || (payments ?? []).length > 0 ? (
+            <section aria-labelledby="payments-h" className="rounded-lg border border-line bg-white p-5 text-sm" data-testid="order-payments">
+              <h2 id="payments-h" className="font-semibold text-espresso">Payment attempts</h2>
+              {(payments ?? []).length === 0 ? <p className="mt-2 text-muted">No payment attempt was started.</p> : null}
+              <ul className="mt-3 divide-y divide-line">
+                {(payments ?? []).map((t) => (
+                  <li key={t.id} className="py-2">
+                    <p>
+                      <span className="font-medium">Attempt {t.attempt}</span> · {t.provider === "mock" ? "sandbox mock" : t.provider} · {formatBDT(Number(t.amount_minor))} · <StatusPill status={t.status} />
+                    </p>
+                    <p className="text-xs text-muted">
+                      {t.tran_id}{t.gateway_val_id ? ` · val ${t.gateway_val_id}` : ""}{t.bank_tran_id ? ` · bank ${t.bank_tran_id}` : ""}{t.card_type ? ` · ${t.card_type}` : ""}
+                      {t.gateway_risk_level === "1" ? " · gateway risk: HIGH" : ""}{t.settled_at ? ` · settled ${dateFmt.format(new Date(t.settled_at))}` : ""}
+                    </p>
+                    <ul className="mt-1 text-xs text-muted">
+                      {(payEvents ?? []).filter((e) => e.transaction_id === t.id).map((e) => (
+                        <li key={e.id}>{dateFmt.format(new Date(e.created_at))} · {e.kind}{e.status ? ` · ${e.status}` : ""}</li>
+                      ))}
+                    </ul>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
 
           <section aria-labelledby="timeline-h">
             <h2 id="timeline-h" className="mb-2 font-semibold text-espresso">Timeline</h2>

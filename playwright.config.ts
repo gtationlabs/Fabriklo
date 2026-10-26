@@ -15,6 +15,8 @@ export default defineConfig({
   },
   webServer: {
     command: `npx next start -p ${PORT}`,
+    // The build runs as production; the labelled mock gateway is explicitly allowed for E2E only.
+    env: { PAYMENTS_ALLOW_MOCK: "true" },
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

@@ -36,7 +36,7 @@ export const placeOrderSchema = z.object({
     .optional()
     .refine((v) => !v || /^\d{4}$/.test(v), "Postcodes have 4 digits"),
   note: z.string().trim().max(500).optional(),
-  paymentMethod: z.literal("cod"),
+  paymentMethod: z.enum(["cod", "sslcommerz"]),
   expectedTotalMinor: z.number().int().nonnegative(),
 });
 

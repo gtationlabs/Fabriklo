@@ -58,7 +58,14 @@ export async function getQuote(district: string | null): Promise<Quote | null> {
   return data as Quote;
 }
 
-export type PlacedOrder = { orderNumber: string; trackingToken: string; totalMinor: number; replayed: boolean };
+export type PlacedOrder = {
+  orderNumber: string;
+  trackingToken: string;
+  totalMinor: number;
+  replayed: boolean;
+  paymentMethod: "cod" | "sslcommerz";
+  paymentStatus: string;
+};
 
 export async function placeOrder(input: z.output<typeof placeOrderSchema>): Promise<PlacedOrder> {
   const token = await cartToken();
@@ -85,7 +92,7 @@ export async function placeOrder(input: z.output<typeof placeOrderSchema>): Prom
     if (error.code === "22023") throw new CheckoutError("invalid_input", MESSAGES.invalid_input);
     throw new CheckoutError("unknown", MESSAGES.unknown);
   }
-  const r = data as { order_number: string; tracking_token: string; total_minor: number; replayed: boolean };
+  const r = data as { order_number: string; tracking_token: string; total_minor: number; replayed: boolean; payment_method: "cod" | "sslcommerz"; payment_status: string };
   const jar = await cookies();
   // The cart is converted; drop its token. Keep the receipt briefly for the success page.
   jar.delete(CART_COOKIE);
@@ -96,7 +103,14 @@ export async function placeOrder(input: z.output<typeof placeOrderSchema>): Prom
     path: "/order",
     maxAge: 60 * 60,
   });
-  return { orderNumber: r.order_number, trackingToken: r.tracking_token, totalMinor: r.total_minor, replayed: r.replayed };
+  return {
+    orderNumber: r.order_number,
+    trackingToken: r.tracking_token,
+    totalMinor: r.total_minor,
+    replayed: r.replayed,
+    paymentMethod: r.payment_method,
+    paymentStatus: r.payment_status,
+  };
 }
 
 export type TrackedOrder = {
@@ -119,6 +133,13 @@ export type TrackedOrder = {
   events: { at: string; field: string; status: string }[];
   shipment: { courier: string; tracking_number: string | null; tracking_url: string | null } | null;
 };
+
+/** The receipt cookie set at checkout (order number + tracking token), if still present. */
+export async function lastOrderFromCookie(): Promise<{ orderNumber: string; token: string } | null> {
+  const raw = (await cookies()).get(LAST_ORDER_COOKIE)?.value ?? "";
+  const [orderNumber = "", token = ""] = raw.split(".");
+  return /^FBK-\d{6,10}$/.test(orderNumber) && /^[A-Za-z0-9_-]{32}$/.test(token) ? { orderNumber, token } : null;
+}
 
 export async function trackOrder(orderNumber: string, token: string): Promise<TrackedOrder | null> {
   if (!/^FBK-\d{6,10}$/.test(orderNumber) || !/^[A-Za-z0-9_-]{32}$/.test(token)) return null;
