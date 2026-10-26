@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens: warm wood, bronze, espresso, charcoal and cream, drawn from the
+ * store renders. Admin theme editing will override these via CSS variables.
+ */
+:root {
+  --color-cream: #f6f0e6;
+  --color-paper: #fbf8f3;
+  --color-sand: #e7dccb;
+  --color-wood: #7a5236;
+  --color-bronze: #9c6b30;
+  --color-bronze-strong: #7c521f;
+  --color-espresso: #2b1d14;
+  --color-charcoal: #2e2b28;
+  --color-muted: #6b625a;
+  --color-line: #d9cdbb;
+  --color-danger: #a1301f;
+  --color-success: #2f6b3a;
+}
+
+@theme inline {
+  --color-cream: var(--color-cream);
+  --color-paper: var(--color-paper);
+  --color-sand: var(--color-sand);
+  --color-wood: var(--color-wood);
+  --color-bronze: var(--color-bronze);
+  --color-bronze-strong: var(--color-bronze-strong);
+  --color-espresso: var(--color-espresso);
+  --color-charcoal: var(--color-charcoal);
+  --color-muted: var(--color-muted);
+  --color-line: var(--color-line);
+  --color-danger: var(--color-danger);
+  --color-success: var(--color-success);
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display), ui-serif, Georgia, serif;
+}
+
+html {
+  background: var(--color-paper);
+  color: var(--color-charcoal);
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-charcoal);
+  font-family: var(--font-sans);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-bronze);
+  outline-offset: 2px;
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -100px;
+  z-index: 100;
+  background: var(--color-espresso);
+  color: var(--color-cream);
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+}
+.skip-link:focus {
+  top: 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
