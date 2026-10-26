@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getStoreContact, getStoreIdentity } from "@/lib/settings/public";
 import { NewsletterForm } from "./newsletter-form";
 
 const COLUMNS = [
@@ -7,13 +8,23 @@ const COLUMNS = [
   { title: "Company", links: [["/about", "About"], ["/contact", "Contact"], ["/privacy", "Privacy"], ["/terms", "Terms"]] },
 ] as const;
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  const [identity, contact] = await Promise.all([getStoreIdentity(), getStoreContact()]);
   return (
     <footer className="mt-24 bg-espresso text-cream">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-4">
         <div>
-          <p className="font-display text-2xl">Fabriklo</p>
-          <p className="mt-3 text-sm text-cream/70">Considered clothing for everyday life in Bangladesh. Prices in BDT.</p>
+          <p className="font-display text-2xl">{identity.name}</p>
+          <p className="mt-3 text-sm text-cream/70">{identity.tagline || "Considered clothing for everyday life in Bangladesh."} Prices in BDT.</p>
+          {contact ? (
+            <address className="mt-3 space-y-1 text-sm not-italic text-cream/70">
+              <a href={`mailto:${contact.email}`} className="inline-block min-h-6 py-0.5 hover:underline">{contact.email}</a>
+              <br />
+              <a href={`tel:${contact.phone}`} className="inline-block min-h-6 py-0.5 hover:underline">{contact.phone}</a>
+              {contact.address ? <p>{contact.address}</p> : null}
+              {contact.hours ? <p>{contact.hours}</p> : null}
+            </address>
+          ) : null}
           <NewsletterForm />
         </div>
         {COLUMNS.map((col) => (
@@ -32,7 +43,7 @@ export function SiteFooter() {
         ))}
       </div>
       <div className="border-t border-cream/10 py-6 text-center text-xs text-cream/60">
-        © {new Date().getFullYear()} Fabriklo. Store renders © their owner. Demo catalogue for development.
+        © {new Date().getFullYear()} {identity.name}. Store renders © their owner. Demo catalogue for development.
       </div>
     </footer>
   );

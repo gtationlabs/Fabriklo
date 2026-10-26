@@ -41,7 +41,7 @@ export const getStaffState = cache(async (): Promise<StaffState> => {
 
   const { data, error: ctxError } = await supabase.rpc("my_staff_context");
   if (ctxError || !data) return { kind: "not_staff", email };
-  const ctx = data as DbStaffContext;
+  let ctx = data as DbStaffContext;
   if (!ctx.is_staff) return { kind: "not_staff", email };
 
   if (claims.aal !== "aal2") {
@@ -49,6 +49,16 @@ export const getStaffState = cache(async (): Promise<StaffState> => {
     const hasVerifiedFactor = (factors?.totp ?? []).some((f) => f.status === "verified");
     return { kind: "needs_mfa", email, hasVerifiedFactor };
   }
+
+  // An invited member becomes active on their first verified session (audited in SQL).
+  // Concurrent requests may race here: whichever loses re-reads the now-active row.
+  if (ctx.status === "invited") {
+    await supabase.rpc("staff_activate_self");
+    const { data: fresh } = await supabase.rpc("my_staff_context");
+    ctx = (fresh ?? null) as DbStaffContext | null ?? ctx;
+    if (!ctx.is_staff || ctx.status !== "active") return { kind: "not_staff", email };
+  }
+  if (ctx.status !== "active") return { kind: "not_staff", email };
 
   return {
     kind: "ok",

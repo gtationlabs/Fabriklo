@@ -17,6 +17,13 @@
   --color-line: #d9cdbb;
   --color-danger: #a1301f;
   --color-success: #2f6b3a;
+  /* Fonts and radii come from the published theme (lib/theme/tokens.ts); these are the defaults. */
+  --font-display: var(--font-cormorant);
+  --font-body: var(--font-inter);
+  --ui-radius-sm: 0.25rem;
+  --ui-radius-md: 0.375rem;
+  --ui-radius-lg: 0.5rem;
+  --ui-radius-xl: 0.75rem;
 }
 
 @theme inline {
@@ -34,6 +41,10 @@
   --color-success: var(--color-success);
   --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-display), ui-serif, Georgia, serif;
+  --radius-sm: var(--ui-radius-sm);
+  --radius-md: var(--ui-radius-md);
+  --radius-lg: var(--ui-radius-lg);
+  --radius-xl: var(--ui-radius-xl);
 }
 
 html {

@@ -20,7 +20,8 @@ export async function signInStaff(_prev: LoginState, formData: FormData): Promis
   const parsed = schema.safeParse({ email: formData.get("email"), password: formData.get("password") });
   if (!parsed.success) return { error: "Enter a valid email and password." };
 
-  const byIp = rateLimit(`admin-login-ip:${ip}`, 10, 15 * 60_000);
+  // Per-IP limit is generous enough for several staff behind one office NAT; the per-account limit is the tight one.
+  const byIp = rateLimit(`admin-login-ip:${ip}`, 30, 15 * 60_000);
   const byEmail = rateLimit(`admin-login-email:${parsed.data.email.toLowerCase()}`, 5, 15 * 60_000);
   if (!byIp.ok || !byEmail.ok) return { error: "Too many attempts. Try again in a few minutes." };
 

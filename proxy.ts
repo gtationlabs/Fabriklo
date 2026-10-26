@@ -29,7 +29,8 @@ export async function proxy(request: NextRequest) {
 
   const { data } = await supabase.auth.getClaims();
   const path = request.nextUrl.pathname;
-  const isAdminPublic = path === "/admin/login";
+  // /admin/welcome verifies an invitation / reset token itself (no session yet).
+  const isAdminPublic = path === "/admin/login" || path === "/admin/welcome";
   if (path.startsWith("/admin") && !isAdminPublic && !data?.claims?.sub) {
     const url = request.nextUrl.clone();
     url.pathname = "/admin/login";

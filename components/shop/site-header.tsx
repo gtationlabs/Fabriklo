@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Menu, Search, ShoppingBag, UserRound } from "lucide-react";
 import { getCart } from "@/lib/cart/service";
+import { getStoreIdentity } from "@/lib/settings/public";
 
 const NAV = [
   { href: "/shop", label: "Shop all" },
@@ -11,7 +12,7 @@ const NAV = [
 ];
 
 export async function SiteHeader({ overlay = false }: { overlay?: boolean }) {
-  const cart = await getCart();
+  const [cart, identity] = await Promise.all([getCart(), getStoreIdentity()]);
   const tone = overlay ? "text-cream" : "text-espresso";
   return (
     <header
@@ -30,8 +31,8 @@ export async function SiteHeader({ overlay = false }: { overlay?: boolean }) {
             ))}
           </nav>
         </details>
-        <Link href="/" className="font-display text-2xl font-semibold tracking-wide">
-          Fabriklo
+        <Link href="/" className="font-display text-2xl font-semibold tracking-wide" data-testid="brand-name">
+          {identity.name}
         </Link>
         <nav aria-label="Primary" className="ml-6 hidden gap-6 text-sm lg:flex">
           {NAV.map((n) => (

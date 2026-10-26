@@ -25,9 +25,14 @@ export default async function ContentPage() {
             and every published version can be restored.
           </p>
         </div>
-        <Link href="/admin/content/preview" target="_blank" className="rounded border border-line bg-white px-4 py-2 text-sm">
-          Preview draft ↗
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/admin/content/theme" className="rounded border border-line bg-white px-4 py-2 text-sm">
+            Theme (colours &amp; fonts)
+          </Link>
+          <Link href="/admin/content/preview" target="_blank" className="rounded border border-line bg-white px-4 py-2 text-sm">
+            Preview draft ↗
+          </Link>
+        </div>
       </header>
 
       {canPublish ? (

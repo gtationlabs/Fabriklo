@@ -145,7 +145,8 @@ insert into public.site_settings (key, value, is_public) values
   ('store.contact', '{"email": "hello@example.com", "phone": "+8801700000000", "note": "Placeholder contact details (demo)"}', true),
   ('checkout.cod', '{"enabled": true, "max_order_minor": 2000000}', false),
   -- Online payment: stock is held for hold_minutes while the customer pays.
-  ('checkout.online', '{"enabled": true, "hold_minutes": 30}', false);
+  ('checkout.online', '{"enabled": true, "hold_minutes": 30}', false)
+on conflict (key) do nothing;
 
 -- Demo shipping zones. Fees are placeholders: staff set real rates in admin.
 insert into public.shipping_zones (code, name, districts, is_fallback, fee_minor, free_over_minor, cod_enabled, estimate_min_days, estimate_max_days, position) values
