@@ -133,10 +133,12 @@ from public.hero_tours t,
   (1, '/assets/store/store-01.webp', 'Wide view of the store entrance: warm wooden ceiling, track lights, clothing racks on both sides and the checkout counter at the back.', 'Welcome in', 'Step inside the store', 'Scroll to walk through the showroom, or skip straight to the collection.', 'Explore the collection', '/shop', '50% 55%', 1.06, 0.04),
   (2, '/assets/store/store-02.webp', 'Left wall shelving with folded tees and hanging tops above a low display table, with fitting rooms in the background.', 'Tops and tees', 'Everyday layers, folded and ready', 'Soft cotton tees, knits and shirts in warm, easy colours.', 'Shop T-shirts', '/category/t-shirts', '40% 50%', 1.08, 0.05),
   (3, '/assets/store/store-03.webp', 'Right side racks with tailored trousers on a chrome rail and shirts on a wooden wall unit.', 'Trousers and shirts', 'Tailoring that moves with you', 'Chinos, herringbone trousers and checked shirts for work and weekend.', 'Shop pants', '/category/pants', '55% 55%', 1.08, 0.05),
-  (4, '/assets/store/store-04.webp', 'The main checkout counter with three numbered service points and lettered wall art behind it.', 'Checkout', 'Easy checkout, cash on delivery', 'Pay on delivery or online, and follow your order from packing to doorstep.', 'How delivery works', '/shipping', '55% 50%', 1.06, 0.03),
+  (4, '/assets/store/store-04.webp', 'The main checkout counter with three numbered service points and lettered wall art behind it.', 'Checkout', 'Easy checkout, cash on delivery', 'Pay cash on delivery and follow your order from packing to doorstep.', 'How delivery works', '/shipping', '55% 50%', 1.06, 0.03),
   (5, '/assets/store/store-05.webp', 'Fitting rooms for women and men next to a rack of jackets, beside the service counter.', 'Fitting rooms', 'Try it on, even from home', 'Preview selected pieces on your own photo with AI try-on (coming soon).', 'Start shopping', '/shop', '45% 50%', 1.07, 0.04)
 ) as s(position, image_path, image_alt, eyebrow, heading, body, cta_label, cta_href, object_position, zoom, parallax)
 where t.key = 'home';
+-- First published version (the storefront reads published snapshots, not drafts).
+select private.snapshot_hero(id, 'Seed version', null) from public.hero_tours where key = 'home';
 
 insert into public.site_settings (key, value, is_public) values
   ('store.identity', '{"name": "Fabriklo", "tagline": "Considered clothing for everyday Dhaka", "currency": "BDT", "locale": "en-BD"}', true),

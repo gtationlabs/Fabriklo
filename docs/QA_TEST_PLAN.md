@@ -22,7 +22,10 @@ Status legend: ✅ automated and passing · 🟡 partial · ⏳ not built yet.
 | Storage | Try-on photos owner-only; product-media write needs permission | ✅ | db |
 | Accessibility | axe (WCAG 2.2 AA tags) on home (desktop + mobile) and checkout | 🟡 | e2e (more pages to add) |
 | Headers | CSP/nosniff/no x-powered-by | ✅ | e2e |
-| Hero tour | Forward/reverse scroll, skip, reduced motion, screenshots | ⏳ | hero milestone |
+| Hero tour | Forward scroll passes scenes 1→5 in order and reverse 5→1; dots jump; skip moves focus; hidden scenes inert; desktop + mobile | ✅ | `tests/e2e/tour.spec.ts` |
+| Hero tour | Reduced motion and no-JS show all 5 static panels; axe clean in tour and static modes | ✅ | e2e |
+| Hero CMS | Drafts never public; publish snapshot; rollback restores; cms.edit vs cms.publish vs aal1; unsafe links/images rejected by DB | ✅ | `tests/db/hero.test.ts` |
+| Hero CMS | Editor drafts → preview → publish → live → rollback | ✅ | `tests/e2e/hero-editor.spec.ts` |
 | Orders/COD | Server quote, zone fee + free threshold, COD limit, stale-total rejection, draft/oversold rejection, phone/district validation | ✅ | `tests/db/orders.test.ts` |
 | Orders/COD | Idempotent replay returns same order without double stock; cancel/return restocks exactly once | ✅ | db |
 | Orders/COD | State machine: pack before pickup, cash only after delivery, `paid` never settable for COD, permissions + MFA per field | ✅ | db |

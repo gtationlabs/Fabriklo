@@ -11,7 +11,7 @@ export const heroSceneSchema = z.object({
   heading: z.string().min(1).max(90),
   body: z.string().max(280),
   cta_label: z.string().min(2).max(40).nullable(),
-  cta_href: z.string().regex(/^\/[A-Za-z0-9/_?=&.-]{0,200}$/).nullable(),
+  cta_href: z.string().regex(/^\/([A-Za-z0-9_?=&.-][A-Za-z0-9/_?=&.-]{0,199})?$/).nullable(),
   object_position: z.string().regex(/^(100|[1-9]?[0-9])% (100|[1-9]?[0-9])%$/),
   zoom: z.coerce.number().min(1).max(1.4),
   parallax: z.coerce.number().min(0).max(0.15),
@@ -37,20 +37,43 @@ export const FALLBACK_SCENES: HeroScene[] = [
   },
 ];
 
-export async function getPublishedHeroScenes(): Promise<HeroScene[]> {
-  const supabase = createSupabasePublicClient();
-  const { data, error } = await supabase
-    .from("hero_scenes")
-    .select("position, image_path, image_alt, eyebrow, heading, body, cta_label, cta_href, object_position, zoom, parallax, transition_ms, hero_tours!inner(key)")
-    .eq("hero_tours.key", "home")
-    .order("position");
-  if (error || !data?.length) return FALLBACK_SCENES;
-  const parsed = data.map((row) => heroSceneSchema.safeParse(row)).filter((r) => r.success).map((r) => r.data);
-  return parsed.length ? parsed : FALLBACK_SCENES;
+export const heroSettingsSchema = z.object({
+  renderer: z.enum(["scroll-2.5d", "static", "gltf"]).catch("scroll-2.5d"),
+  overlay_opacity: z.coerce.number().min(0).max(0.9).catch(0.35),
+  motion_strength: z.coerce.number().min(0).max(1.5).catch(1),
+});
+export type HeroSettings = z.infer<typeof heroSettingsSchema>;
+export const DEFAULT_HERO_SETTINGS: HeroSettings = { renderer: "scroll-2.5d", overlay_opacity: 0.35, motion_strength: 1 };
+
+export type HeroTour = { scenes: HeroScene[]; settings: HeroSettings };
+
+function parseScenes(rows: unknown[]): HeroScene[] {
+  return rows
+    .map((row) => heroSceneSchema.safeParse(row))
+    .filter((r) => r.success)
+    .map((r) => r.data)
+    .sort((a, b) => a.position - b.position);
 }
 
-/** Responsive sources generated for each render (see docs/3D_TOUR_ASSETS.md). */
-export function heroSrcSet(path: string): string {
-  const base = path.replace(/\.(webp|jpg|png|avif)$/, "");
-  return `${base}-768.webp 768w, ${base}-1280.webp 1280w, ${path} 1728w`;
+/**
+ * The LIVE tour: the published, immutable snapshot (RLS only exposes the
+ * version a tour currently points at). Drafts never reach the storefront.
+ */
+export async function getPublishedHero(key = "home"): Promise<HeroTour> {
+  const supabase = createSupabasePublicClient();
+  const { data, error } = await supabase
+    .from("hero_tour_versions")
+    .select("scenes, settings, tour:hero_tours!hero_tour_versions_tour_id_fkey!inner(key)")
+    .eq("tour.key", key)
+    .limit(1)
+    .maybeSingle();
+  if (error || !data) return { scenes: FALLBACK_SCENES, settings: DEFAULT_HERO_SETTINGS };
+  const scenes = parseScenes((data.scenes as unknown[]) ?? []);
+  return {
+    scenes: scenes.length ? scenes : FALLBACK_SCENES,
+    settings: heroSettingsSchema.parse(data.settings ?? {}),
+  };
 }
+
+export { parseScenes };
+export { heroSrcSet } from "./hero-media";

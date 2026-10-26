@@ -1,6 +1,6 @@
 # Implementation status
 
-_Last updated: 2026-10-26 · Milestone: foundation, slice 1 (catalog/admin), slice 2 (orders + cash on delivery)_
+_Last updated: 2026-10-26 · Milestone: foundation, slice 1 (catalog/admin), slice 2 (orders + cash on delivery), slice 3 (scroll store tour + hero editor)_
 
 This file is the honest source of truth for what exists. It does **not** claim production readiness.
 
@@ -20,12 +20,13 @@ The repository contained only a README. The client supplied five 2D store render
 | Storefront | Home (static first scene + sections), shop/men/women/category/collection/search with URL filters + pagination, product page with colour/size/SKU availability, guest cart page, cart & products APIs | E2E desktop + mobile, axe |
 | Admin | Staff login (throttled, generic errors), mandatory TOTP enrolment/verification, role-filtered console, overview KPIs from real data, product list/create/edit/publish/archive, variants with private cost, stock adjustments (reasoned, idempotent, audited), inventory alerts + ledger | E2E full slice |
 | Orders + COD (slice 2) | Migration 0008: shipping zones, 64 districts, server quote, idempotent `create_order` with atomic stock commit + snapshots, HMAC tracking tokens, state machine with guards, restock on cancel/return, manual shipments, explainable risk rules, pg_cron reservation expiry. Checkout page (BD address, phone normalisation, COD), order success with private tracking link, `/orders/track`. Admin orders list (views + search), order detail (timeline, transitions, courier entry, internal notes, flag), risk review queue | 16 order DB tests + 1 concurrency test + 3 E2E |
-| Tests | 28 unit · 55 DB/RLS/concurrency · 20 Playwright | all passing locally |
+| Store tour (slice 3) | GSAP ScrollTrigger 2.5D walkthrough over the 5 renders (push-in, drift, cross-dissolves, reversible), scene dots, skip, inert hidden scenes, reduced-motion / no-JS static panels, softer mobile motion. Migration 0009: draft scenes vs immutable published versions, publish/rollback RPCs (cms.publish), reorder, draft settings, stricter internal-link CHECK. Admin "Content & hero" editor with draft preview and version history | 5 hero DB tests + 10 tour E2E (desktop + mobile) + 1 editor E2E |
+| Tests | 28 unit · 60 DB/RLS/concurrency · 31 Playwright | all passing locally |
 
 ### Routes working now
 
 Storefront: `/`, `/shop`, `/men`, `/women`, `/category/[slug]`, `/collections/[slug]`, `/search`, `/product/[slug]`, `/cart`, `/checkout`, `/order/success`, `/orders/track`
-Admin: `/admin/login`, `/admin/mfa`, `/admin`, `/admin/products`, `/admin/products/new`, `/admin/products/[id]`, `/admin/inventory`, `/admin/orders`, `/admin/orders/[id]`, `/admin/risk`
+Admin: `/admin/login`, `/admin/mfa`, `/admin`, `/admin/products`, `/admin/products/new`, `/admin/products/[id]`, `/admin/inventory`, `/admin/orders`, `/admin/orders/[id]`, `/admin/risk`, `/admin/content`, `/admin/content/preview`
 API: `GET /api/products`, `GET /api/cart`, `POST|PATCH|DELETE /api/cart/items`, `POST /api/checkout/quote`, `POST /api/checkout/orders`
 
 ## Mock vs live
@@ -35,7 +36,7 @@ There are **no** live third-party integrations yet. No payment, courier, SMS, em
 ## Next milestones (in order)
 
 1. ~~Orders + COD~~ done in slice 2.
-2. **Store tour** — GSAP ScrollTrigger 2.5D sequence over the 5 renders, reverse scroll, skip, reduced-motion/static fallback, mobile tour, screenshot tests, admin hero-scene editor with preview/rollback.
+2. ~~Store tour~~ done in slice 3.
 3. CMS pages + theme versions; customer accounts (sign-up/in, addresses, order history).
 4. SSLCOMMERZ sandbox, courier adapters (manual first).
 5. AI try-on (FASHN) with private storage, queue worker, quotas, deletion.
@@ -51,7 +52,8 @@ There are **no** live third-party integrations yet. No payment, courier, SMS, em
 - CSP still permits inline scripts; rate limiting is single-instance in-memory; no Turnstile/WAF yet.
 - No error monitoring; no backup/restore drill performed.
 - Forced global sign-out on staff role change not implemented (role changes do take effect immediately in the DB).
-- Legal pages (privacy, terms, shipping, returns) are linked but not written; they 404 today.
+- Legal pages (privacy, terms, shipping, returns) are linked but not written; they 404 today (the tour's scene 4 button points to /shipping).
+- The store renders show "ALVIC STORE" signage; replace or mask before launch if that is not the brand.
 - Business details (brand name, contact, VAT applicability, delivery fees, COD limits) not supplied — placeholders/configurable settings are used.
 
 ## Known limitations / decisions

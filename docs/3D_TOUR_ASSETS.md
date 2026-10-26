@@ -44,10 +44,38 @@ done
 
 Originals are not committed (≈ 11 MB); keep them with the client's design files.
 
-## CMS schema (already in the database)
+## How the tour works (built)
 
-`hero_tours` (renderer, status, overlay opacity, motion strength) and `hero_scenes` (position, image path from `/assets/store/` only, alt text ≥ 10 chars, eyebrow, heading, body, CTA label, internal-only CTA href, object-position `NN% NN%`, zoom 1–1.4, parallax 0–0.15, transition 200–3000 ms, publish flag). The same bounds are enforced by Zod in `lib/cms/hero.ts`.
+`components/hero/store-tour.tsx`, rendered on `/` from the **published** version.
 
-## Next milestone
+- **Server HTML** is five full-height panels (image + caption + CTA). This is also what visitors get without JavaScript, with `prefers-reduced-motion: reduce`, or when an editor sets the mode to "Static panels only".
+- **With motion allowed**, `gsap.matchMedia()` adds `.is-tour`, pins the stage and scrubs one timeline over about 1.1 screen heights of scroll per scene:
+  - slow camera push-in on each render (`zoom` → `zoom + 0.12 × motion strength`) with vertical drift (`parallax`), anchored on the scene's focus point (`object_position`);
+  - a cross-dissolve with a slight zoom-out into the next render, as if turning into the next area;
+  - captions slide out and in.
+  Scrolling up plays it in reverse. Motion is about 40% softer on phones. If the OS reduced-motion setting changes, the effect reverts cleanly.
+- **Controls**: "Skip store tour" moves focus to the Featured section; scene dots (24 px targets) jump to a scene; a polite `n / 5` counter. Scenes that aren't showing are `inert`, so keyboard and screen-reader users only reach the visible scene's link.
+- **Test hooks**: `#store-tour[data-mode=tour|static][data-active-scene=N]`, `[data-scene=N]`.
+- **Loading**: scene 1 is eager with `fetchpriority=high`; the others are lazy and low priority, with a 32 px blurred background placeholder; responsive `srcset` uses 768/1280/1728 widths.
 
-GSAP ScrollTrigger pinned sequence (scrub, reversible), reduced-motion/static fallback (the current static hero), mobile shorter tour, deterministic test hooks (`data-scene` + progress attribute), screenshot tests at desktop/mobile, admin scene editor with preview and rollback.
+## Editing (admin → Content & hero)
+
+`hero_scenes` is the **draft**. Editors (`cms.edit`) can:
+- change the render (one of the five), alt text, label, heading, text, button label and internal link;
+- set the camera focus (x/y), start zoom and drift;
+- show or hide a scene, reorder scenes, and change tour settings (mode, text shading, motion strength).
+
+"Preview draft" renders the draft with the same component. **Publish** (`cms.publish`) stores an immutable snapshot in `hero_tour_versions` and points the tour at it. The storefront can only read that snapshot (RLS); drafts are never public. **Roll back** makes an earlier version live again and loads it as the draft. Every publish and rollback is audited.
+
+Safety:
+- Text is rendered as plain text, so no HTML or scripts.
+- Links must be internal paths. `javascript:`, external hosts and `//host` are refused in Zod and again by a database CHECK.
+- Images are limited to `/assets/store/`.
+
+## Screenshots
+
+`docs/screenshots/tour-desktop-scene-1..5.jpg`, `tour-mobile-scene-1.jpg`, `tour-mobile-scene-3.jpg`.
+
+## Honest limits
+
+These are fixed camera views, so there is no free movement or parallax between foreground and background layers. Proper depth layers would need the renders split into layers (or depth maps); a true walkthrough needs the 3D source file. The "ALVIC STORE" signage in the renders is still visible.

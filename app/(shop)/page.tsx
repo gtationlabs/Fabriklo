@@ -2,51 +2,22 @@ import Link from "next/link";
 import { ProductCard } from "@/components/shop/product-card";
 import { parseFilters } from "@/lib/catalog/filters";
 import { getFacets, searchProducts } from "@/lib/catalog/queries";
-import { getPublishedHeroScenes, heroSrcSet } from "@/lib/cms/hero";
+import { StoreTour } from "@/components/hero/store-tour";
+import { getPublishedHero } from "@/lib/cms/hero";
 
 export default async function HomePage() {
-  const [scenes, featured, newest, facets] = await Promise.all([
-    getPublishedHeroScenes(),
+  const [tour, featured, newest, facets] = await Promise.all([
+    getPublishedHero(),
     searchProducts(parseFilters({ sort: "featured" }), 8),
     searchProducts(parseFilters({}), 4),
     getFacets(),
   ]);
-  const first = scenes[0]!;
 
   return (
     <>
-      {/* Static first scene. The scroll-driven 5-scene tour mounts here in the hero milestone;
-          this markup doubles as its reduced-motion / no-JS fallback. */}
-      <section aria-labelledby="hero-heading" className="relative isolate flex min-h-[85svh] items-end overflow-hidden bg-espresso">
-        {/* eslint-disable-next-line @next/next/no-img-element -- responsive srcset of pre-optimised renders */}
-        <img
-          src={first.image_path}
-          srcSet={heroSrcSet(first.image_path)}
-          sizes="100vw"
-          alt={first.image_alt}
-          fetchPriority="high"
-          className="absolute inset-0 -z-10 h-full w-full object-cover"
-          style={{ objectPosition: first.object_position }}
-        />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-espresso/85 via-espresso/30 to-transparent" aria-hidden />
-        <div className="mx-auto w-full max-w-7xl px-4 pb-16 sm:px-6">
-          <p className="text-sm uppercase tracking-[0.25em] text-cream/80">{first.eyebrow}</p>
-          <h1 id="hero-heading" className="mt-3 max-w-2xl font-display text-5xl font-semibold leading-tight text-cream md:text-7xl">
-            {first.heading}
-          </h1>
-          <p className="mt-4 max-w-xl text-lg text-cream/85">{first.body}</p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link href={first.cta_href ?? "/shop"} className="rounded bg-cream px-6 py-3 font-medium text-espresso hover:bg-white">
-              {first.cta_label ?? "Explore the collection"}
-            </Link>
-            <Link href="#featured" className="rounded border border-cream/60 px-6 py-3 font-medium text-cream hover:bg-cream/10">
-              Skip store tour
-            </Link>
-          </div>
-        </div>
-      </section>
+      <StoreTour scenes={tour.scenes} settings={tour.settings} />
 
-      <section id="featured" aria-labelledby="featured-heading" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <section id="featured" tabIndex={-1} aria-labelledby="featured-heading" className="scroll-mt-20 outline-none mx-auto max-w-7xl px-4 py-16 sm:px-6">
         <div className="flex items-end justify-between">
           <h2 id="featured-heading" className="font-display text-3xl font-semibold text-espresso">Featured</h2>
           <Link href="/shop?sort=featured" className="text-sm text-bronze-strong underline">View all</Link>

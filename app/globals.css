@@ -75,3 +75,77 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Store tour. Static (default): stacked full-height panels. `.is-tour` (added
+   by JS when motion is allowed): one pinned stage, scenes layered on top.
+   --------------------------------------------------------------------------- */
+.store-tour__scene {
+  position: relative;
+  display: flex;
+  min-height: 88svh;
+  align-items: flex-end;
+  overflow: hidden;
+  isolation: isolate;
+}
+.store-tour__frame {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+}
+.store-tour__img {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  background-size: cover;
+  background-position: center;
+  will-change: transform;
+}
+.store-tour__shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgb(43 29 20 / calc(var(--shade, 0.35) + 0.5)) 0%,
+    rgb(43 29 20 / var(--shade, 0.35)) 45%,
+    transparent 80%
+  );
+}
+.store-tour__caption {
+  width: 100%;
+  padding-bottom: 6.5rem;
+}
+.store-tour__controls {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  margin-inline: auto;
+  display: flex;
+  max-width: 80rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-inline: 1rem;
+}
+.store-tour:not(.is-tour) .store-tour__controls {
+  position: static;
+  justify-content: flex-end;
+  padding-block: 1rem;
+}
+.store-tour.is-tour .store-tour__stage {
+  position: relative;
+  height: 100svh;
+  overflow: hidden;
+}
+.store-tour.is-tour .store-tour__scene {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+}
+@media (min-width: 640px) {
+  .store-tour__controls { padding-inline: 1.5rem; }
+}
