@@ -74,6 +74,13 @@ Status legend: ✅ automated and passing · 🟡 partial · ⏳ not built yet.
 | Admin E2E | Theme: draft → scoped preview + contrast warning → draft-only preview page → publish changes the live store's CSS variables and font → second version → roll back → defaults republished; content editor sees no publish form | ✅ | `tests/e2e/admin-settings.spec.ts` |
 | Admin E2E | Settings: store name on storefront header/title, invalid name refused, COD limit bounds, zone fee change reflected in checkout quote, duplicate district refused, demo warning cleared; audit log filtered + CSV; support agent denied Settings/Audit | ✅ | e2e |
 | Admin E2E | Staff: invite → one-time link → accept → weak password refused → password → MFA enrol → active in list → order manager denied Staff → suspend locks out on next request → reactivate → MFA reset removes factors; events audited under the admin; own row locked | ✅ | e2e |
+| Photos | WebP re-encode within 2000 px, metadata stripped; small kept; non-image / undecodable / tiny / extreme aspect / >10 MB refused; bucket vs local URLs | ✅ | `tests/unit/media.test.ts` |
+| Photos | Staff cannot insert `product_media` directly; RPC adds with audit; variant must belong to product; card picks first photo; reorder needs the full set; delete returns the path; last garment removal disables try-on | ✅ | `tests/db/inventory-ops.test.ts` |
+| Purchase orders | Draft needs `inventory.adjust`; validation; re-save replaces lines; receive refused on draft; partial → received moves stock once; replay with same key is a no-op; over-receive refused; cost visible only with `products.costs`; cancel keeps received stock | ✅ | db |
+| Transfers | Same-warehouse refused; send needs available stock (reservations respected); sent → received moves stock exactly once; cancelling in transit returns stock; bad transitions refused | ✅ | db |
+| Admin E2E | Photos: upload two → thumbnails load from the bucket → bad file skipped with reason → reorder → alt edit → storefront card + gallery show them → remove deletes the object | ✅ | `tests/e2e/inventory-ops.spec.ts` |
+| Admin E2E | PO: draft with SKU search → ordered → receive 3 then 4 → on-hand +7 → transfer 5 to the backroom: in transit (source −5) → received (destination +5) | ✅ | e2e |
+| Inventory | Cycle counts | ⏳ | not built |
 | Messaging | Real SMTP delivery, SMS gateway, WhatsApp template, signed webhook received by a real endpoint | ⏳ | needs credentials / receiver |
 | Load | k6 browse / checkout / admin scenarios | 🟡 | scripts in `load/k6/`, not executed yet (`docs/LOAD_TESTING.md`) |
 | Backup | Backup + restore drill with row-count verification | ✅ | `scripts/restore-drill.sh`, run locally 2026-10-26 (`docs/BACKUP_RESTORE.md`) |

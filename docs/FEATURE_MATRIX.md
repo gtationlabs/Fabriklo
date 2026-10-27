@@ -7,7 +7,7 @@ _Last updated: 2026-10-26 (after slice 9). `IMPLEMENTATION_STATUS.md` has the de
 | Feature | Status | Notes |
 | --- | --- | --- |
 | Product listing, filters, sort, pagination, search | ✅ | `/shop`, `/men`, `/women`, `/category/[slug]`, `/collections/[slug]`, `/search` |
-| Product detail with real SKU/size/colour, availability | ✅ | Placeholder art (no product photos supplied yet) |
+| Product detail with real SKU/size/colour, availability | ✅ | Photo gallery with colour thumbnails; labelled placeholder until photos are uploaded |
 | Guest cart | ✅ | Capability-token cart, server pricing |
 | Homepage with 2.5D scroll store tour | ✅ | Five owner renders, GSAP ScrollTrigger, reduced-motion / no-JS fallbacks |
 | Hero tour editor with draft → preview → publish → rollback | ✅ | Admin → Content & hero |
@@ -16,8 +16,8 @@ _Last updated: 2026-10-26 (after slice 9). `IMPLEMENTATION_STATUS.md` has the de
 | Store name, tagline, contact as settings | ✅ | Admin → Settings; brand not inferred from the renders |
 | Staff login + mandatory TOTP MFA | ✅ | aal2 enforced in DB |
 | Staff management (invite link, roles, suspend, MFA reset) | ✅ 🔌 | Invite/reset links shown once (no email sent); needs `SUPABASE_SECRET_KEY` |
-| Admin product CRUD + variants + costs | ✅ | Product photos ⏳ (none supplied) |
-| Inventory: ledger, adjustments, alerts, reservations | ✅ | Purchase orders/transfers/cycle counts ⏳ |
+| Admin product CRUD + variants + costs | ✅ | Product photos ✅ (upload, alt, colour, order, remove; validated + re-encoded) |
+| Inventory: ledger, adjustments, alerts, reservations | ✅ | Purchase orders ✅ · transfers ✅ · cycle counts ⏳ |
 | Orders + cash-on-delivery checkout | ✅ | Atomic stock commit, state machine, risk rules |
 | Order tracking (customer-safe token) | ✅ | `/orders/track` + account history |
 | Risk review queue | ✅ | Explainable rules, no automatic "fraud" label |

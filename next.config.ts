@@ -36,6 +36,9 @@ const nextConfig: NextConfig = {
   },
   images: {
     formats: ["image/avif", "image/webp"],
+    // Local Supabase serves the bucket from a loopback address; the optimiser
+    // refuses private IPs by default (SSRF guard). Only relaxed for loopback.
+    dangerouslyAllowLocalIP: /^(127\.0\.0\.1|localhost)$/.test(supabaseOrigin ? new URL(supabaseOrigin).hostname : ""),
     remotePatterns: supabaseOrigin
       ? [{ protocol: new URL(supabaseOrigin).protocol.replace(":", "") as "http" | "https", hostname: new URL(supabaseOrigin).hostname, pathname: "/storage/v1/object/public/**" }]
       : [],

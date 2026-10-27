@@ -1,4 +1,6 @@
+import Image from "next/image";
 import Link from "next/link";
+import { mediaUrl } from "@/lib/media/url";
 import type { ProductCard as Card } from "@/lib/catalog/queries";
 import { DemoBadge } from "@/components/ui/demo-badge";
 import { Price } from "./price";
@@ -10,7 +12,13 @@ export function ProductCard({ product }: { product: Card }) {
     <article className="group relative flex flex-col gap-2" data-testid="product-card">
       <Link href={`/product/${product.slug}`} className="block focus-visible:outline-offset-4">
         <div className="relative">
-          <ProductArt title={product.title} hex={product.colors[0]?.hex} className="transition group-hover:brightness-95" />
+          {product.image_path ? (
+            <div className="relative aspect-[4/5] w-full overflow-hidden bg-sand transition group-hover:brightness-95">
+              <Image src={mediaUrl(product.image_path)} alt={product.image_alt ?? product.title} fill sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw" className="object-cover" />
+            </div>
+          ) : (
+            <ProductArt title={product.title} hex={product.colors[0]?.hex} className="transition group-hover:brightness-95" />
+          )}
           {soldOut ? (
             <span className="absolute left-2 top-2 rounded-sm bg-charcoal/85 px-2 py-0.5 text-xs text-cream">Sold out</span>
           ) : product.max_compare_at_minor ? (

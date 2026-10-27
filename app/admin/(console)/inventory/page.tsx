@@ -25,6 +25,10 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
             {all === "1" ? "Show alerts only" : "Show all SKUs"}
           </Link>
         </p>
+        <nav aria-label="Inventory operations" className="mt-3 flex flex-wrap gap-2 text-sm">
+          <Link href="/admin/inventory/purchase-orders" className="rounded border border-line px-3 py-1 hover:bg-cream">Purchase orders</Link>
+          <Link href="/admin/inventory/transfers" className="rounded border border-line px-3 py-1 hover:bg-cream">Transfers</Link>
+        </nav>
       </header>
       <div className="overflow-x-auto rounded-lg border border-line bg-white">
         <table className="w-full text-left text-sm">

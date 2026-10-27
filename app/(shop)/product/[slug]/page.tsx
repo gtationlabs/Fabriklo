@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DemoBadge } from "@/components/ui/demo-badge";
-import { ProductArt } from "@/components/shop/product-art";
+import { ProductGallery, type GalleryImage } from "@/components/shop/product-gallery";
 import { ProductCard } from "@/components/shop/product-card";
 import { PurchasePanel } from "@/components/shop/purchase-panel";
 import { TryonPanel } from "@/components/tryon/tryon-panel";
@@ -39,6 +39,11 @@ export default async function ProductPage({ params }: PageProps<"/product/[slug]
     : [null, null];
   const tryon = offer && tryonConfig?.enabled ? { offer, config: tryonConfig } : null;
 
+  const colourOf = new Map(product.variants.map((v) => [v.id, v.color]));
+  const gallery: GalleryImage[] = product.media
+    .filter((m) => !m.is_tryon_garment)
+    .map((m) => ({ id: m.id, src: m.storage_path, alt: m.alt, width: m.width, height: m.height, color: m.variant_id ? (colourOf.get(m.variant_id) ?? null) : null }));
+
   const related = product.category
     ? (await searchProducts(parseFilters({}, { category: product.category.slug }), 5)).products.filter((p) => p.id !== product.id).slice(0, 4)
     : [];
@@ -62,9 +67,7 @@ export default async function ProductPage({ params }: PageProps<"/product/[slug]
         </ol>
       </nav>
       <div className="grid gap-10 md:grid-cols-2">
-        <div className="grid gap-3">
-          <ProductArt title={product.title} hex={product.variants[0]?.color_hex} size="hero" />
-        </div>
+        <ProductGallery title={product.title} hex={product.variants[0]?.color_hex} images={gallery} />
         <div>
           {product.is_demo ? <DemoBadge className="mb-3" /> : null}
           <h1 className="font-display text-4xl font-semibold text-espresso">{product.title}</h1>

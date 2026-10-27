@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProductForm } from "@/components/admin/product-form";
 import { GarmentForm } from "@/components/admin/tryon-forms";
+import { MediaEditor, type MediaItem } from "@/components/admin/media-editor";
 import { AddVariantForm, VariantRow, type VariantRowData } from "@/components/admin/variant-editor";
 import { requireStaff } from "@/lib/auth/staff";
 import { compareSizes } from "@/lib/catalog/sizes";
@@ -32,7 +33,12 @@ export default async function EditProductPage({ params, searchParams }: PageProp
   const variants = (product.variants as V[]).sort((a, b) => a.color.localeCompare(b.color) || compareSizes(a.size, b.size));
   const ids = variants.map((v) => v.id);
 
-  const { data: garment } = await supabase.from("product_media").select("storage_path, alt").eq("product_id", id).eq("is_tryon_garment", true).order("position", { ascending: false }).limit(1).maybeSingle();
+  const { data: mediaRows } = await supabase.from("product_media").select("id, storage_path, alt, width, height, variant_id, is_tryon_garment").eq("product_id", id).order("position").order("created_at");
+  type M = MediaItem & { is_tryon_garment: boolean };
+  const allMedia = (mediaRows ?? []) as M[];
+  const garment = allMedia.filter((m) => m.is_tryon_garment).at(-1) ?? null;
+  const photos: MediaItem[] = allMedia.filter((m) => !m.is_tryon_garment);
+  const colours = [...new Map(variants.map((v) => [v.color, { variant_id: v.id, color: v.color }])).values()];
   const [{ data: balances }, { data: costs }] = await Promise.all([
     can("inventory.read") && ids.length
       ? supabase.from("stock_balances").select("variant_id, warehouse_id, on_hand, reserved, warehouse:warehouses(name)").in("variant_id", ids)
@@ -77,6 +83,11 @@ export default async function EditProductPage({ params, searchParams }: PageProp
         ) : (
           <p className="text-sm text-muted">Read-only: you do not have permission to edit products.</p>
         )}
+      </section>
+
+      <section aria-labelledby="photos-heading">
+        <h2 id="photos-heading" className="mb-2 text-lg font-semibold text-espresso">Photos</h2>
+        <MediaEditor productId={product.id} media={photos} colours={colours} canWrite={canWrite} />
       </section>
 
       <section aria-labelledby="tryon-heading" className="max-w-3xl">
