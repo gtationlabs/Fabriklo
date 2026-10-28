@@ -4,6 +4,8 @@ import { parseFilters } from "@/lib/catalog/filters";
 import { getFacets, searchProducts } from "@/lib/catalog/queries";
 import { StoreTour } from "@/components/hero/store-tour";
 import { getPublishedHero } from "@/lib/cms/hero";
+import { CustomerReviews } from "@/components/home/customer-reviews";
+import { getHomeTestimonials } from "@/lib/reviews/testimonials";
 
 export default async function HomePage() {
   const [tour, featured, newest, facets] = await Promise.all([
@@ -12,6 +14,7 @@ export default async function HomePage() {
     searchProducts(parseFilters({}), 4),
     getFacets(),
   ]);
+  const testimonials = getHomeTestimonials();
 
   return (
     <>
@@ -68,6 +71,8 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+
+      <CustomerReviews reviews={testimonials.reviews} sample={testimonials.sample} />
 
       <section aria-labelledby="tryon-heading" className="mx-auto mt-16 max-w-7xl px-4 sm:px-6">
         <div className="grid items-center gap-8 overflow-hidden rounded bg-espresso text-cream md:grid-cols-2">
