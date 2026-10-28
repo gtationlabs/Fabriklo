@@ -265,4 +265,98 @@ body {
     opacity: 1;
     transform: none;
   }
+
+/* ---------------------------------------------------------------------------
+   Customer reviews ("hang-tag deck"). Static (default): a swipeable row on
+   small screens and a grid on wide ones. `.is-deck` (added by JS on wide
+   screens when motion is allowed): one pinned stage, tags stacked in a pile.
+   --------------------------------------------------------------------------- */
+.customer-reviews__deck {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(17rem, 82%);
+  gap: 1.25rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 3rem 0.25rem 1.5rem;
+  scrollbar-width: thin;
+}
+@media (min-width: 1024px) {
+  .customer-reviews__deck {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: visible;
+  }
+}
+.customer-reviews__tag {
+  position: relative;
+  scroll-snap-align: start;
+  filter: drop-shadow(0 14px 22px rgb(43 29 20 / 0.16));
+  will-change: transform;
+}
+/* The cord the tag hangs from. */
+.customer-reviews__tag::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  bottom: calc(100% - 1.5rem);
+  left: 50%;
+  width: 1.5px;
+  height: 2.75rem;
+  translate: -50% 0;
+  background: linear-gradient(var(--color-wood), color-mix(in srgb, var(--color-wood) 60%, transparent));
+}
+.customer-reviews__card {
+  position: relative;
+  height: 100%;
+  padding: 2.75rem 1.5rem 1.5rem;
+  background:
+    linear-gradient(var(--swatch) 0 0) top / 100% 0.5rem no-repeat,
+    var(--color-paper);
+  clip-path: polygon(1.75rem 0, calc(100% - 1.75rem) 0, 100% 1.75rem, 100% 100%, 0 100%, 0 1.75rem);
+}
+.customer-reviews__hole {
+  position: absolute;
+  top: 1.1rem;
+  left: 50%;
+  width: 0.85rem;
+  height: 0.85rem;
+  translate: -50% 0;
+  border-radius: 9999px;
+  background: var(--color-sand);
+  box-shadow:
+    inset 0 1px 2px rgb(43 29 20 / 0.35),
+    0 0 0 3px color-mix(in srgb, var(--swatch) 55%, transparent);
+}
+.customer-reviews__ribbon {
+  overflow: hidden;
+  background: var(--color-espresso);
+  padding-block: 1.1rem;
+}
+.customer-reviews__ribbon-track {
+  display: flex;
+  width: max-content;
+}
+
+.customer-reviews.is-deck .customer-reviews__stage {
+  display: flex;
+  min-height: 100svh;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.customer-reviews.is-deck .customer-reviews__stage > div:first-child {
+  flex: 1;
+}
+.customer-reviews.is-deck .customer-reviews__deck {
+  display: block;
+  position: relative;
+  height: 27rem;
+  padding: 0;
+  overflow: visible;
+}
+.customer-reviews.is-deck .customer-reviews__tag {
+  position: absolute;
+  top: 0;
+  left: max(0px, calc(50% - 15rem));
+  width: min(30rem, 100%);
 }

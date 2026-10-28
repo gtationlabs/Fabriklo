@@ -21,6 +21,8 @@ async function loadShowcase(categories: { slug: string; name: string }[]) {
   );
   return buildShowcase(groups);
 }
+import { CustomerReviews } from "@/components/home/customer-reviews";
+import { getHomeTestimonials } from "@/lib/reviews/testimonials";
 
 export default async function HomePage() {
   const [tour, featured, newest, facets, rail, identity] = await Promise.all([
@@ -32,6 +34,7 @@ export default async function HomePage() {
     getStoreIdentity(),
   ]);
   const showcase = await loadShowcase(facets.categories);
+  const testimonials = getHomeTestimonials();
 
   return (
     <>
@@ -85,7 +88,9 @@ export default async function HomePage() {
 
       <CategoryShowcase showcase={showcase} />
 
-      <section aria-labelledby="tryon-heading" className="mx-auto max-w-7xl px-4 sm:px-6">
+      <CustomerReviews reviews={testimonials.reviews} sample={testimonials.sample} />
+
+      <section aria-labelledby="tryon-heading" className="mx-auto mt-16 max-w-7xl px-4 sm:px-6">
         <div className="grid items-center gap-8 overflow-hidden rounded bg-espresso text-cream md:grid-cols-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/assets/store/store-05-1280.webp" alt="Fitting rooms in the store" loading="lazy" className="h-full w-full object-cover" />
