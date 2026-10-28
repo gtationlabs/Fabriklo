@@ -4,6 +4,20 @@ import { parseFilters } from "@/lib/catalog/filters";
 import { getFacets, searchProducts } from "@/lib/catalog/queries";
 import { StoreTour } from "@/components/hero/store-tour";
 import { getPublishedHero } from "@/lib/cms/hero";
+import { CategoryShowcase } from "@/components/shop/category-showcase";
+import { SHOWCASE_PER_CATEGORY, buildShowcase, type ShowcaseGroup } from "@/lib/catalog/category-showcase";
+
+/** One featured-first query per category; a failed query just drops that category. */
+async function loadShowcase(categories: { slug: string; name: string }[]) {
+  const groups = await Promise.all(
+    categories.map((c): Promise<ShowcaseGroup | null> =>
+      searchProducts(parseFilters({}, { category: c.slug, sort: "featured" }), SHOWCASE_PER_CATEGORY)
+        .then((r) => ({ slug: c.slug, name: c.name, products: r.products, total: r.total }))
+        .catch(() => null),
+    ),
+  );
+  return buildShowcase(groups);
+}
 
 export default async function HomePage() {
   const [tour, featured, newest, facets] = await Promise.all([
@@ -12,6 +26,7 @@ export default async function HomePage() {
     searchProducts(parseFilters({}), 4),
     getFacets(),
   ]);
+  const showcase = await loadShowcase(facets.categories);
 
   return (
     <>
@@ -44,20 +59,7 @@ export default async function HomePage() {
         ))}
       </section>
 
-      <section aria-labelledby="categories-heading" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-        <h2 id="categories-heading" className="font-display text-3xl font-semibold text-espresso">Shop by category</h2>
-        <ul className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          {facets.categories.map((c) => (
-            <li key={c.slug}>
-              <Link href={`/category/${c.slug}`} className="flex h-24 items-center justify-center rounded border border-line bg-cream text-center font-medium text-espresso hover:border-bronze">
-                {c.name}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section aria-labelledby="new-heading" className="mx-auto max-w-7xl px-4 sm:px-6">
+      <section aria-labelledby="new-heading" className="mx-auto mt-16 max-w-7xl px-4 sm:px-6">
         <div className="flex items-end justify-between">
           <h2 id="new-heading" className="font-display text-3xl font-semibold text-espresso">New arrivals</h2>
           <Link href="/collections/new-arrivals" className="text-sm text-bronze-strong underline">View all</Link>
@@ -69,7 +71,9 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section aria-labelledby="tryon-heading" className="mx-auto mt-16 max-w-7xl px-4 sm:px-6">
+      <CategoryShowcase showcase={showcase} />
+
+      <section aria-labelledby="tryon-heading" className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="grid items-center gap-8 overflow-hidden rounded bg-espresso text-cream md:grid-cols-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/assets/store/store-05-1280.webp" alt="Fitting rooms in the store" loading="lazy" className="h-full w-full object-cover" />
