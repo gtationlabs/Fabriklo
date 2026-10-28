@@ -4,18 +4,30 @@ import { parseFilters } from "@/lib/catalog/filters";
 import { getFacets, searchProducts } from "@/lib/catalog/queries";
 import { StoreTour } from "@/components/hero/store-tour";
 import { getPublishedHero } from "@/lib/cms/hero";
+import { GarmentRail } from "@/components/shop/garment-rail";
+import { railGarments } from "@/lib/catalog/rail";
+import { getStoreIdentity } from "@/lib/settings/public";
 
 export default async function HomePage() {
-  const [tour, featured, newest, facets] = await Promise.all([
+  const [tour, featured, newest, facets, rail, identity] = await Promise.all([
     getPublishedHero(),
     searchProducts(parseFilters({ sort: "featured" }), 8),
     searchProducts(parseFilters({}), 4),
     getFacets(),
+    searchProducts(parseFilters({ sort: "featured" }), 40),
+    getStoreIdentity(),
   ]);
 
   return (
     <>
       <StoreTour scenes={tour.scenes} settings={tour.settings} />
+
+      <GarmentRail
+        garments={railGarments(rail.products)}
+        brand={identity.name}
+        tagline={identity.tagline || `${identity.name}, on the rail`}
+        marquee={[identity.tagline || identity.name, "Cash on delivery across Bangladesh", `${identity.name} Dhaka`]}
+      />
 
       <section id="featured" tabIndex={-1} aria-labelledby="featured-heading" className="scroll-mt-20 outline-none mx-auto max-w-7xl px-4 py-16 sm:px-6">
         <div className="flex items-end justify-between">
