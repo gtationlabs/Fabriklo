@@ -158,6 +158,91 @@ body {
   inset: 0;
   min-height: 0;
 }
+/* Keep the caption clear of the scene dots and any fixed bottom UI (cookie banner). */
+.store-tour.is-tour .store-tour__caption {
+  padding-bottom: calc(6.5rem + var(--fbk-bottom-ui, 0px));
+}
+.store-tour__cam {
+  position: absolute;
+  inset: 0;
+}
+.store-tour__cam > .store-tour__img {
+  display: block;
+}
+/* 3D camera: each frame is a perspective viewport, the camera wrapper and the
+   render move in real 3D (z / rotateY), slightly oversized so turns and the
+   pointer tilt never show an edge at rest. */
+.store-tour.is-tour .store-tour__frame {
+  perspective: 1100px;
+  perspective-origin: 50% 45%;
+  background: radial-gradient(ellipse at 50% 40%, #3a281c 0%, #120b07 75%);
+}
+.store-tour.is-tour .store-tour__cam {
+  inset: -4%;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.store-tour.is-tour .store-tour__img {
+  backface-visibility: hidden;
+}
+.store-tour__progress {
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 50;
+  height: 3px;
+  transform-origin: 0 50%;
+  transform: scaleX(var(--tour-progress, 0));
+  background: var(--color-cream, #f6efe6);
+  opacity: 0.85;
+}
+.store-tour__hint {
+  position: absolute;
+  left: 50%;
+  top: 5.5rem;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  transform: translateX(-50%);
+  font-size: 0.7rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: rgb(246 239 230 / 0.85);
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+.store-tour[data-walking] .store-tour__hint {
+  opacity: 0;
+}
+.store-tour__mouse {
+  position: relative;
+  display: block;
+  width: 1.4rem;
+  height: 2.2rem;
+  border: 2px solid currentColor;
+  border-radius: 999px;
+}
+.store-tour__mouse::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0.4rem;
+  width: 3px;
+  height: 0.45rem;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: currentColor;
+  animation: store-tour-wheel 1.6s ease-in-out infinite;
+}
+@keyframes store-tour-wheel {
+  0% { transform: translateY(0); opacity: 1; }
+  80% { transform: translateY(0.6rem); opacity: 0; }
+  100% { transform: translateY(0); opacity: 0; }
+}
 @media (min-width: 640px) {
   .store-tour__controls { padding-inline: 1.5rem; }
+}
+@media (min-width: 768px) {
+  .store-tour__hint { top: auto; left: auto; right: 2rem; bottom: 50%; transform: none; }
 }

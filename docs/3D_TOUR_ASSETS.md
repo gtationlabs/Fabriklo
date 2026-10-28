@@ -79,3 +79,16 @@ Safety:
 ## Honest limits
 
 These are fixed camera views, so there is no free movement or parallax between foreground and background layers. Proper depth layers would need the renders split into layers (or depth maps); a true walkthrough needs the 3D source file. The "ALVIC STORE" signage in the renders is still visible.
+
+## Camera moves (3D tour, 2026-10-28)
+
+The tour is a 3D camera over the flat renders (CSS perspective + GSAP), not a 3D model:
+
+- Each area: the camera dollies in on the scene's **focus point** (`object_position`).
+- Between areas the camera turns toward the next one, based on the next scene's focus point X in the hero editor:
+  left of 48% turns left, right of 52% turns right, otherwise it walks straight ahead (`lib/cms/hero-camera.ts`).
+- `motion_strength` scales every move (0 = almost still). Phones get 65% strength and no motion blur.
+- Reduced motion, no JavaScript, renderer "static", or a single scene: the scenes show as normal stacked panels.
+- With no published tour in the database, the built-in five scenes in `lib/cms/hero-fallback.ts` are used.
+
+A true walk-through (free camera between the renders) needs the 3D source file (SketchUp / 3ds Max / Blender) exported as glTF.

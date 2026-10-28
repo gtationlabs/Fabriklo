@@ -1,6 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { createSupabasePublicClient } from "@/lib/supabase/public";
+import { FALLBACK_SCENES } from "./hero-fallback";
 
 /** Typed, bounded hero-scene schema (mirrors CHECK constraints in SQL). */
 export const heroSceneSchema = z.object({
@@ -19,23 +20,7 @@ export const heroSceneSchema = z.object({
 });
 export type HeroScene = z.infer<typeof heroSceneSchema>;
 
-/** Built-in fallback so the homepage still renders if the CMS is unreachable. */
-export const FALLBACK_SCENES: HeroScene[] = [
-  {
-    position: 1,
-    image_path: "/assets/store/store-01.webp",
-    image_alt: "Wide view of the store entrance with wooden ceiling, clothing racks and the checkout counter.",
-    eyebrow: "Welcome in",
-    heading: "Step inside the store",
-    body: "Scroll to walk through the showroom, or skip straight to the collection.",
-    cta_label: "Explore the collection",
-    cta_href: "/shop",
-    object_position: "50% 55%",
-    zoom: 1.06,
-    parallax: 0.04,
-    transition_ms: 900,
-  },
-];
+export { FALLBACK_SCENES };
 
 export const heroSettingsSchema = z.object({
   renderer: z.enum(["scroll-2.5d", "static", "gltf"]).catch("scroll-2.5d"),
