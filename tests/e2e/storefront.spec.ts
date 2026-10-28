@@ -15,6 +15,29 @@ test.describe("storefront", () => {
     expect(serious.map((v) => `${v.id}: ${v.nodes.length}`)).toEqual([]);
   });
 
+  test("home shows products grouped by category with keyboard-friendly tabs", async ({ page }) => {
+    await page.goto("/");
+    const section = page.getByTestId("category-showcase");
+    await section.scrollIntoViewIfNeeded();
+    await expect(section.getByRole("heading", { level: 2, name: "Shop by category" })).toBeVisible();
+    const tabs = section.getByRole("tab");
+    expect(await tabs.count()).toBeGreaterThanOrEqual(2);
+    await expect(tabs.first()).toHaveAttribute("aria-selected", "true");
+
+    await section.getByRole("tab", { name: "Pants" }).click();
+    const panel = section.getByRole("tabpanel");
+    await expect(panel).toHaveCount(1);
+    const cards = panel.getByTestId("product-card");
+    expect(await cards.count()).toBeGreaterThan(0);
+    // Every card shows a picture (uploaded photo or the demo illustration), never the initials placeholder.
+    await expect(panel.getByRole("img", { name: /Placeholder image/ })).toHaveCount(0);
+    await expect(panel.getByRole("link", { name: /View all Pants/ })).toHaveAttribute("href", "/category/pants");
+
+    await section.getByRole("tab", { name: "Pants" }).press("ArrowRight");
+    await expect(section.getByRole("tab", { name: "Polos" })).toHaveAttribute("aria-selected", "true");
+    await expect(section.getByRole("tab", { name: "Polos" })).toBeFocused();
+  });
+
   test("filters persist in the URL and narrow results", async ({ page }) => {
     await page.goto("/shop?size=32&category=pants");
     await expect(page.getByTestId("result-count")).toContainText("product");
