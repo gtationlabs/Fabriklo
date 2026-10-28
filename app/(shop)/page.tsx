@@ -4,18 +4,48 @@ import { parseFilters } from "@/lib/catalog/filters";
 import { getFacets, searchProducts } from "@/lib/catalog/queries";
 import { StoreTour } from "@/components/hero/store-tour";
 import { getPublishedHero } from "@/lib/cms/hero";
+import { GarmentRail } from "@/components/shop/garment-rail";
+import { railGarments } from "@/lib/catalog/rail";
+import { getStoreIdentity } from "@/lib/settings/public";
+import { CategoryShowcase } from "@/components/shop/category-showcase";
+import { SHOWCASE_PER_CATEGORY, buildShowcase, type ShowcaseGroup } from "@/lib/catalog/category-showcase";
+
+/** One featured-first query per category; a failed query just drops that category. */
+async function loadShowcase(categories: { slug: string; name: string }[]) {
+  const groups = await Promise.all(
+    categories.map((c): Promise<ShowcaseGroup | null> =>
+      searchProducts(parseFilters({}, { category: c.slug, sort: "featured" }), SHOWCASE_PER_CATEGORY)
+        .then((r) => ({ slug: c.slug, name: c.name, products: r.products, total: r.total }))
+        .catch(() => null),
+    ),
+  );
+  return buildShowcase(groups);
+}
+import { CustomerReviews } from "@/components/home/customer-reviews";
+import { getHomeTestimonials } from "@/lib/reviews/testimonials";
 
 export default async function HomePage() {
-  const [tour, featured, newest, facets] = await Promise.all([
+  const [tour, featured, newest, facets, rail, identity] = await Promise.all([
     getPublishedHero(),
     searchProducts(parseFilters({ sort: "featured" }), 8),
     searchProducts(parseFilters({}), 4),
     getFacets(),
+    searchProducts(parseFilters({ sort: "featured" }), 40),
+    getStoreIdentity(),
   ]);
+  const showcase = await loadShowcase(facets.categories);
+  const testimonials = getHomeTestimonials();
 
   return (
     <>
       <StoreTour scenes={tour.scenes} settings={tour.settings} />
+
+      <GarmentRail
+        garments={railGarments(rail.products)}
+        brand={identity.name}
+        tagline={identity.tagline || `${identity.name}, on the rail`}
+        marquee={[identity.tagline || identity.name, "Cash on delivery across Bangladesh", `${identity.name} Dhaka`]}
+      />
 
       <section id="featured" tabIndex={-1} aria-labelledby="featured-heading" className="scroll-mt-20 outline-none mx-auto max-w-7xl px-4 py-16 sm:px-6">
         <div className="flex items-end justify-between">
@@ -44,20 +74,7 @@ export default async function HomePage() {
         ))}
       </section>
 
-      <section aria-labelledby="categories-heading" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-        <h2 id="categories-heading" className="font-display text-3xl font-semibold text-espresso">Shop by category</h2>
-        <ul className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          {facets.categories.map((c) => (
-            <li key={c.slug}>
-              <Link href={`/category/${c.slug}`} className="flex h-24 items-center justify-center rounded border border-line bg-cream text-center font-medium text-espresso hover:border-bronze">
-                {c.name}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section aria-labelledby="new-heading" className="mx-auto max-w-7xl px-4 sm:px-6">
+      <section aria-labelledby="new-heading" className="mx-auto mt-16 max-w-7xl px-4 sm:px-6">
         <div className="flex items-end justify-between">
           <h2 id="new-heading" className="font-display text-3xl font-semibold text-espresso">New arrivals</h2>
           <Link href="/collections/new-arrivals" className="text-sm text-bronze-strong underline">View all</Link>
@@ -68,6 +85,10 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+
+      <CategoryShowcase showcase={showcase} />
+
+      <CustomerReviews reviews={testimonials.reviews} sample={testimonials.sample} />
 
       <section aria-labelledby="tryon-heading" className="mx-auto mt-16 max-w-7xl px-4 sm:px-6">
         <div className="grid items-center gap-8 overflow-hidden rounded bg-espresso text-cream md:grid-cols-2">

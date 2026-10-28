@@ -1,20 +1,23 @@
 import Image from "next/image";
 import Link from "next/link";
 import { mediaUrl } from "@/lib/media/url";
+import { demoArtPath } from "@/lib/catalog/demo-catalog";
 import type { ProductCard as Card } from "@/lib/catalog/queries";
 import { DemoBadge } from "@/components/ui/demo-badge";
 import { Price } from "./price";
 import { ProductArt } from "./product-art";
 
-export function ProductCard({ product }: { product: Card }) {
+export function ProductCard({ product, href }: { product: Card; href?: string }) {
   const soldOut = product.available <= 0;
+  // Demo products without an uploaded photo show their generated illustration.
+  const image = product.image_path ?? (product.is_demo ? demoArtPath(product.slug) : null);
   return (
     <article className="group relative flex flex-col gap-2" data-testid="product-card">
-      <Link href={`/product/${product.slug}`} className="block focus-visible:outline-offset-4">
+      <Link href={href ?? `/product/${product.slug}`} className="block focus-visible:outline-offset-4">
         <div className="relative">
-          {product.image_path ? (
+          {image ? (
             <div className="relative aspect-[4/5] w-full overflow-hidden bg-sand transition group-hover:brightness-95">
-              <Image src={mediaUrl(product.image_path)} alt={product.image_alt ?? product.title} fill sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw" className="object-cover" />
+              <Image src={mediaUrl(image)} alt={product.image_alt ?? product.title} fill sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw" className="object-cover" />
             </div>
           ) : (
             <ProductArt title={product.title} hex={product.colors[0]?.hex} className="transition group-hover:brightness-95" />

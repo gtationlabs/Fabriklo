@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DemoBadge } from "@/components/ui/demo-badge";
+import { demoArtPath } from "@/lib/catalog/demo-catalog";
 import { ProductGallery, type GalleryImage } from "@/components/shop/product-gallery";
 import { ProductCard } from "@/components/shop/product-card";
 import { PurchasePanel } from "@/components/shop/purchase-panel";
@@ -43,6 +44,8 @@ export default async function ProductPage({ params }: PageProps<"/product/[slug]
   const gallery: GalleryImage[] = product.media
     .filter((m) => !m.is_tryon_garment)
     .map((m) => ({ id: m.id, src: m.storage_path, alt: m.alt, width: m.width, height: m.height, color: m.variant_id ? (colourOf.get(m.variant_id) ?? null) : null }));
+  const demoArt = gallery.length === 0 && product.is_demo ? demoArtPath(product.slug) : null;
+  if (demoArt) gallery.push({ id: "demo-art", src: demoArt, alt: `Illustration of the ${product.title} (demo product)`, width: 800, height: 1000, color: null });
 
   const related = product.category
     ? (await searchProducts(parseFilters({}, { category: product.category.slug }), 5)).products.filter((p) => p.id !== product.id).slice(0, 4)
