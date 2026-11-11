@@ -5,6 +5,7 @@ import { mediaUrl } from "@/lib/media/url";
 import { demoArtPath } from "@/lib/catalog/demo-catalog";
 import type { ProductCard as Card } from "@/lib/catalog/queries";
 import { formatBDTCode } from "@/lib/money";
+import { discountLabel } from "@/lib/catalog/product-page";
 import { DemoBadge } from "@/components/ui/demo-badge";
 import { ProductArt } from "./product-art";
 
@@ -50,21 +51,24 @@ export function ProductCard({ product, href }: { product: Card; href?: string })
             <ProductArt title={product.title} hex={product.colors[0]?.hex} className="transition group-hover:brightness-95" />
           )}
         </Link>
-        {soldOut ? (
-          <span className="absolute left-3 top-3 rounded-[3px] bg-ink/85 px-2 py-0.5 text-[11px] text-white">Sold out</span>
-        ) : onSale ? (
-          <span className="absolute left-3 top-3 rounded-[3px] bg-danger px-2 py-0.5 text-[11px] text-white">Sale</span>
+        {onSale ? (
+          <span className="absolute right-3 top-3 rounded-[3px] bg-danger px-2.5 py-0.5 text-[11px] font-medium text-white">Sale</span>
         ) : null}
-        {!soldOut ? (
+        <div className="absolute inset-x-3 bottom-3 flex gap-2 md:inset-x-4 md:bottom-4">
           <Link
             href={to}
-            aria-label={`Add ${product.title} to bag (choose a size)`}
-            title="Add to bag"
-            className="absolute bottom-3 left-3 flex h-9 w-9 items-center justify-center rounded-[4px] bg-white text-ink shadow-sm transition hover:bg-ink hover:text-white md:bottom-4 md:left-4"
+            aria-label={soldOut ? `View ${product.title} (out of stock)` : `Add ${product.title} to bag (choose a size)`}
+            title={soldOut ? "View product" : "Add to bag"}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[4px] bg-white text-ink shadow-sm transition hover:bg-ink hover:text-white"
           >
             <BagPlus className="h-[18px] w-[18px]" />
           </Link>
-        ) : null}
+          {soldOut ? (
+            <span className="flex h-9 flex-1 items-center justify-center rounded-[4px] bg-white/95 text-[12px] text-danger shadow-sm" data-testid="out-of-stock">
+              Out Of Stock
+            </span>
+          ) : null}
+        </div>
       </div>
 
       <div className="mt-3 flex items-start justify-between gap-3">
@@ -97,16 +101,19 @@ export function ProductCard({ product, href }: { product: Card; href?: string })
         </details>
       ) : null}
 
-      <p className="mt-2 flex items-baseline gap-2 text-[14px] font-semibold md:text-[15px]">
-        <span className={onSale ? "text-danger" : undefined}>
+      <p className="mt-2 flex flex-wrap items-baseline gap-x-1.5 text-[14px] font-semibold md:text-[15px]">
+        <span>
           <span className="sr-only">From </span>
           {formatBDTCode(product.min_price_minor)}
         </span>
         {onSale ? (
-          <s className="text-[12px] font-normal text-neutral-600">
-            <span className="sr-only">Was </span>
-            {formatBDTCode(product.max_compare_at_minor)}
-          </s>
+          <>
+            <s className="text-[13px] font-normal text-neutral-600">
+              <span className="sr-only">Was </span>
+              {formatBDTCode(product.max_compare_at_minor)}
+            </s>
+            <span className="text-[13px] font-normal text-danger">{discountLabel(product.min_price_minor, product.max_compare_at_minor)}</span>
+          </>
         ) : null}
       </p>
       {product.is_demo ? <DemoBadge className="mt-1.5 self-start" /> : null}

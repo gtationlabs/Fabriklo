@@ -86,6 +86,34 @@ test.describe("storefront", () => {
     await expect(page.getByTestId("result-count")).toHaveText(/^1 - 1 of 1 Item for/);
   });
 
+  test("product page: breadcrumb, code, gallery, sizes, share, also-like and recently viewed", async ({ page }) => {
+    await page.goto("/product/linen-blend-shirt");
+    await page.goto("/product/oxford-button-down-shirt");
+    const crumbs = page.getByRole("navigation", { name: "Breadcrumb" });
+    await expect(crumbs.getByRole("link", { name: "Men" })).toHaveAttribute("href", "/men");
+    await expect(crumbs.getByText("Oxford Button-Down Shirt - OXFORDBU")).toBeVisible();
+    await expect(page.getByTestId("product-code")).toHaveText("Product Code: OXFORDBU");
+    await expect(page.getByTestId("gallery-position")).toHaveText("1 / 3");
+    await page.getByRole("button", { name: "Next photo" }).click();
+    await expect(page.getByTestId("gallery-position")).toHaveText("2 / 3");
+    // Picking another colour swaps the pictures and starts again at the first one.
+    await page.locator('label[title="White"]').click();
+    await expect(page.getByText("Color: White")).toBeVisible();
+    await expect(page.getByTestId("gallery-position")).toHaveText("1 / 2");
+    await expect(page.getByRole("link", { name: "Size Guide", exact: true })).toHaveAttribute("href", "/size-guide");
+    await expect(page.getByRole("link", { name: "Share on WhatsApp" })).toHaveAttribute("href", /^https:\/\/wa\.me\/\?text=/);
+    await page.getByRole("button", { name: "Find in store" }).click();
+    await expect(page.getByRole("dialog", { name: "Find in store" })).toBeVisible();
+    await page.getByRole("button", { name: "Close" }).click();
+    await expect(page.getByTestId("also-like").getByTestId("product-card").first()).toBeVisible();
+    await expect(page.getByTestId("recently-viewed").getByText("Linen Blend Shirt")).toBeVisible();
+    const axe = await new AxeBuilder({ page: page as unknown as ConstructorParameters<typeof AxeBuilder>[0]["page"] }).withTags(["wcag2a", "wcag2aa", "wcag22aa"]).analyze();
+    const serious = axe.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
+    expect(serious.map((v) => `${v.id}: ${v.nodes.length}`)).toEqual([]);
+    // No sideways scrolling on phones.
+    expect(await page.evaluate(() => document.scrollingElement!.scrollWidth <= window.innerWidth)).toBe(true);
+  });
+
   test("draft products are not reachable publicly", async ({ page }) => {
     const res = await page.goto("/product/unreleased-draft-jacket");
     expect(res?.status()).toBe(404);
@@ -94,7 +122,7 @@ test.describe("storefront", () => {
   test("guest can pick a size, add to cart, change quantity and remove", async ({ page }) => {
     await page.goto("/product/essential-crew-tee");
     await expect(page.getByRole("heading", { level: 1, name: "Essential Crew Tee" })).toBeVisible();
-    await page.getByRole("button", { name: "Add to cart" }).click();
+    await page.getByRole("button", { name: "Add to bag" }).click();
     await expect(page.locator("main [role=alert], form [role=alert], div[role=alert]:not(#__next-route-announcer__)").filter({ hasNotText: /^$/ }).first()).toHaveText("Please choose a size.");
 
     // Pick the first size with plenty of stock so quantity can be raised later.
@@ -105,7 +133,7 @@ test.describe("storefront", () => {
       if ((await page.getByTestId("availability").textContent()) === "In stock") break;
     }
     await expect(page.getByTestId("availability")).toHaveText("In stock");
-    await page.getByRole("button", { name: "Add to cart" }).click();
+    await page.getByRole("button", { name: "Add to bag" }).click();
     await expect(page.getByRole("status")).toContainText("Added 1");
     await expect(page.getByTestId("cart-count")).toHaveText("1");
 
