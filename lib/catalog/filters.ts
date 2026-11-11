@@ -3,7 +3,7 @@ import { parseTakaToMinor } from "@/lib/money";
 
 export const SORTS = ["newest", "price_asc", "price_desc", "featured"] as const;
 export type Sort = (typeof SORTS)[number];
-export const PAGE_SIZE = 12;
+export const PAGE_SIZE = 40;
 
 export type CatalogFilters = {
   q: string | null;

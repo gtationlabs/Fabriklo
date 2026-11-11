@@ -15,38 +15,75 @@ test.describe("storefront", () => {
     expect(serious.map((v) => `${v.id}: ${v.nodes.length}`)).toEqual([]);
   });
 
-  test("home shows products grouped by category with keyboard-friendly tabs", async ({ page }) => {
+  test("home shows department rows of category cards that scroll and link to listings", async ({ page }, info) => {
     await page.goto("/");
-    const section = page.getByTestId("category-showcase");
-    await section.scrollIntoViewIfNeeded();
-    await expect(section.getByRole("heading", { level: 2, name: "Shop by category" })).toBeVisible();
-    const tabs = section.getByRole("tab");
-    expect(await tabs.count()).toBeGreaterThanOrEqual(2);
-    await expect(tabs.first()).toHaveAttribute("aria-selected", "true");
+    const rows = page.getByTestId("department-rows");
+    await rows.scrollIntoViewIfNeeded();
+    for (const name of ["Menswear", "Womenswear", "Accessories"]) {
+      await expect(rows.getByRole("heading", { level: 2, name, exact: true })).toBeVisible();
+    }
+    const men = page.getByTestId("department-men");
+    await expect(men.getByRole("link", { name: /Explore All/ })).toHaveAttribute("href", "/men");
+    const shirts = men.getByTestId("department-tile").filter({ has: page.getByText("Shirts", { exact: true }) }).first();
+    await expect(shirts).toHaveAttribute("href", "/men?category=shirts");
+    // Every card shows a picture (uploaded photo or the demo illustration).
+    expect(await men.getByTestId("department-tile").locator("img").count()).toBe(await men.getByTestId("department-tile").count());
 
-    await section.getByRole("tab", { name: "Pants" }).click();
-    const panel = section.getByRole("tabpanel");
-    await expect(panel).toHaveCount(1);
-    const cards = panel.getByTestId("product-card");
-    expect(await cards.count()).toBeGreaterThan(0);
-    // Every card shows a picture (uploaded photo or the demo illustration), never the initials placeholder.
-    await expect(panel.getByRole("img", { name: /Placeholder image/ })).toHaveCount(0);
-    await expect(panel.getByRole("link", { name: /View all Pants/ })).toHaveAttribute("href", "/category/pants");
+    if (info.project.name === "desktop") {
+      const track = men.getByRole("list", { name: "Menswear" });
+      const before = await track.evaluate((el) => el.scrollLeft);
+      await men.getByRole("button", { name: "Scroll Menswear forward" }).click();
+      await expect.poll(() => track.evaluate((el) => el.scrollLeft)).toBeGreaterThan(before);
+      await expect(men.getByRole("button", { name: "Scroll Menswear back" })).toBeVisible();
+    }
 
-    await section.getByRole("tab", { name: "Pants" }).press("ArrowRight");
-    await expect(section.getByRole("tab", { name: "Polos" })).toHaveAttribute("aria-selected", "true");
-    await expect(section.getByRole("tab", { name: "Polos" })).toBeFocused();
+    await shirts.click();
+    await expect(page).toHaveURL(/\/men\?category=shirts/);
+    await expect(page.getByRole("navigation", { name: "Breadcrumb" })).toContainText("Shirts");
+  });
+
+  test("listing page has departments, collection pills, filter menus and catalogue cards", async ({ page }, info) => {
+    await page.goto("/men");
+    await expect(page.getByRole("navigation", { name: "Departments" }).getByRole("link", { name: "Men", exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByTestId("listing-promo")).toBeVisible();
+    await expect(page.getByTestId("result-count")).toHaveText(/^1 - \d+ of \d+ Items$/);
+
+    const card = page.getByTestId("product-card").first();
+    await expect(card.getByText(/BDT [\d,]+/).first()).toBeVisible();
+    await expect(card.getByText(/^\d+ colors?$/)).toBeVisible();
+    await expect(card.getByRole("link", { name: /^Add .+ to bag/ })).toBeVisible();
+
+    // Collection pills keep the department and add the collection.
+    const pills = page.getByRole("navigation", { name: "Collections" });
+    await expect(pills.getByRole("link", { name: "All" })).toHaveAttribute("aria-current", "true");
+    await pills.getByRole("link", { name: "Winter Layers" }).click();
+    await expect(page).toHaveURL(/\/men\?collection=winter-layers/);
+    await expect(pills.getByRole("link", { name: "Winter Layers" })).toHaveAttribute("aria-current", "true");
+
+    if (info.project.name === "desktop") {
+      // Size menu: pick a size and apply; the choice is kept in the URL.
+      await page.locator("summary").filter({ hasText: /^Size/ }).click();
+      await page.locator("label").filter({ hasText: /^L$/ }).click();
+      await page.getByRole("button", { name: "Apply" }).filter({ visible: true }).click();
+      await expect(page).toHaveURL(/size=L/);
+      await expect(page).toHaveURL(/collection=winter-layers/);
+      // Sort menu links keep the filters.
+      await page.locator("summary").filter({ hasText: /Default|Featured|Price:/ }).last().click();
+      await page.getByRole("link", { name: "Price: low to high" }).click();
+      await expect(page).toHaveURL(/sort=price_asc/);
+      await expect(page).toHaveURL(/size=L/);
+    }
   });
 
   test("filters persist in the URL and narrow results", async ({ page }) => {
     await page.goto("/shop?size=32&category=pants");
-    await expect(page.getByTestId("result-count")).toContainText("product");
+    await expect(page.getByTestId("result-count")).toContainText("Items");
     const cards = page.getByTestId("product-card");
     const n = await cards.count();
     expect(n).toBeGreaterThan(0);
     expect(n).toBeLessThan(5);
     await page.goto("/shop?q=oxford");
-    await expect(page.getByTestId("result-count")).toHaveText(/1 product/);
+    await expect(page.getByTestId("result-count")).toHaveText(/^1 - 1 of 1 Item for/);
   });
 
   test("draft products are not reachable publicly", async ({ page }) => {
