@@ -4,7 +4,7 @@ import { ActionForm } from "@/components/admin/action-form";
 import { Badge, SettingsPanel, SettingsRow } from "@/components/admin/ui";
 import { requireStaff } from "@/lib/auth/staff";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { signOutOtherSessions } from "../hub-actions";
+import { setStaffMfaRequired, signOutOtherSessions } from "../hub-actions";
 
 export const metadata: Metadata = { title: "Security" };
 
@@ -22,7 +22,28 @@ export default async function SecuritySettings() {
   const totp = (factors?.totp ?? []).filter((f) => f.status === "verified");
   return (
     <SettingsPanel title="Security" description="Two-step sign-in and your active sessions." icon={<ShieldCheck className="size-5" aria-hidden />}>
-      <SettingsRow title="Authenticator app" description="Every admin session needs a code from your authenticator. A super admin can reset it from the Staff page if you lose your phone.">
+      <SettingsRow
+        title="Two-step sign-in for staff"
+        description="When on, every staff sign-in also needs a 6-digit code from an authenticator app. When off, email and password are enough. Only a super admin can change this."
+      >
+        <p className="text-sm" data-testid="staff-mfa-status">
+          {staff.mfaRequired ? <Badge tone="good">On: authenticator code required</Badge> : <Badge tone="warn">Off: password only</Badge>}
+        </p>
+        {staff.role === "super_admin" ? (
+          <ActionForm
+            action={setStaffMfaRequired}
+            label="Two-step sign-in for staff"
+            submitLabel={staff.mfaRequired ? "Turn off authenticator codes" : "Turn on authenticator codes"}
+            danger={staff.mfaRequired}
+            confirm={staff.mfaRequired
+              ? "Turn off authenticator codes for every staff account? A stolen password alone will then open the admin."
+              : "Require an authenticator code for every staff sign-in? You and every other staff member will be asked to set one up straight away."}
+          >
+            <input type="hidden" name="required" value={staff.mfaRequired ? "off" : "on"} />
+          </ActionForm>
+        ) : null}
+      </SettingsRow>
+      <SettingsRow title="Authenticator app" description="Used when two-step sign-in is on. A super admin can reset it from the Staff page if you lose your phone.">
         {totp.length ? (
           <ul className="space-y-2 text-sm">
             {totp.map((f) => (

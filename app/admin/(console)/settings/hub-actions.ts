@@ -26,7 +26,7 @@ const profileSchema = z.object({
 
 export async function saveProfile(_prev: ActionState, fd: FormData): Promise<ActionState> {
   const staff = await staffOnly();
-  if (!staff) return { ok: false, message: "Your session has expired. Sign in again with MFA." };
+  if (!staff) return { ok: false, message: "Your session has expired. Sign in again." };
   const keys = ["display_name", "full_name", "job_title", "phone", "language"] as const;
   const parsed = profileSchema.safeParse(Object.fromEntries(keys.map((k) => [k, str(fd, k)])));
   if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Check the fields." };
@@ -61,7 +61,7 @@ export async function saveProfile(_prev: ActionState, fd: FormData): Promise<Act
 // ---------------------------------------------------------------- account
 export async function changePassword(_prev: ActionState, fd: FormData): Promise<ActionState> {
   const staff = await staffOnly();
-  if (!staff) return { ok: false, message: "Your session has expired. Sign in again with MFA." };
+  if (!staff) return { ok: false, message: "Your session has expired. Sign in again." };
   const pw = String(fd.get("password") ?? "");
   const confirm = String(fd.get("confirm") ?? "");
   if (pw.length < 12 || pw.length > 128) return { ok: false, message: "Use 12 to 128 characters." };
@@ -75,7 +75,7 @@ export async function changePassword(_prev: ActionState, fd: FormData): Promise<
 
 export async function signOutOtherSessions(): Promise<ActionState> {
   const staff = await staffOnly();
-  if (!staff) return { ok: false, message: "Your session has expired. Sign in again with MFA." };
+  if (!staff) return { ok: false, message: "Your session has expired. Sign in again." };
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signOut({ scope: "others" });
   if (error) return { ok: false, message: "Could not sign out the other sessions. Please try again." };
@@ -190,4 +190,22 @@ export async function revokeApiKey(id: string): Promise<ActionState> {
   if (error) return { ok: false, message: friendlyDbError(error) };
   revalidatePath("/admin/settings/api");
   return { ok: true, message: "Key revoked. Requests with it now fail." };
+}
+
+// ---------------------------------------------------------------- staff MFA switch (super admin)
+export async function setStaffMfaRequired(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const staff = await staffOnly();
+  if (!staff) return { ok: false, message: "Your session has expired. Sign in again." };
+  if (staff.role !== "super_admin") return { ok: false, message: "Only a super admin can change this." };
+  const required = str(fd, "required") === "on";
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("admin_set_staff_mfa_required", { p_required: required });
+  if (error) return { ok: false, message: friendlyDbError(error) };
+  revalidatePath("/admin", "layout");
+  return {
+    ok: true,
+    message: required
+      ? "Authenticator codes are now required. Staff without one are asked to set it up."
+      : "Authenticator codes are now off. Staff sign in with email and password only.",
+  };
 }

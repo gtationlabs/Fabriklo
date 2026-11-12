@@ -10,7 +10,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 /**
  * Invitation / password-reset acceptance for staff. The hashed token from the
  * link is verified server-side (verifyOtp), which starts a session in cookies;
- * the member then sets a password and continues to MFA enrolment.
+ * the member then sets a password and continues to the console (via MFA enrolment when staff MFA is on).
  */
 export type WelcomeState = { error: string | null; step: "accept" | "password" };
 
@@ -38,5 +38,6 @@ export async function setStaffPassword(_prev: WelcomeState, fd: FormData): Promi
   if (!claims?.claims?.sub) return { error: "Your invitation session ended. Open the link again.", step: "accept" };
   const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
   if (error) return { error: /password/i.test(error.message) ? "Choose a stronger password (12+ characters with letters and numbers)." : "Could not save the password.", step: "password" };
-  redirect("/admin/mfa");
+  // The console layout sends the session on to /admin/mfa when staff MFA is switched on.
+  redirect("/admin");
 }

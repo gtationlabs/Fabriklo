@@ -79,7 +79,7 @@ export async function inviteStaff(_prev: StaffActionState, fd: FormData): Promis
   revalidatePath("/admin/staff");
   return {
     ok: true,
-    message: link ? "Invitation created. Copy the link below and send it to them yourself; it is shown only once." : "Added. They can sign in with their existing password and will be asked to set up MFA.",
+    message: link ? "Invitation created. Copy the link below and send it to them yourself; it is shown only once." : "Added. They can sign in with their existing password.",
     link,
   };
 }

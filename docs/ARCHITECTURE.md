@@ -6,7 +6,7 @@ Fabriklo is a Next.js (App Router, TypeScript strict) storefront and staff conso
 Browser ──► Next.js (proxy.ts: session refresh, /admin bounce)
              ├─ Server Components / Server Actions / Route Handlers
              │    • Zod validation, rate limits, same-origin checks
-             │    • requireStaff()/checkStaff(): verified JWT + current role rows + aal2
+             │    • requireStaff()/checkStaff(): verified JWT + current role rows + aal2 (when staff MFA is on)
              │    • Supabase client AS THE USER (publishable key + user JWT) → RLS applies
              └─ Anonymous public client (catalog, capability-token cart RPCs)
                                 │
@@ -24,7 +24,7 @@ Trusted workers/scripts (secret key, never in browser): reservation expiry, try-
 ## Principles
 
 1. **Three locks, not one.** UI hides what you can't use (cosmetic) → server action/route re-checks permission + MFA → Postgres RLS/RPC checks again with the caller's JWT. The service/secret key is not used on any request path.
-2. **Current permissions, not cached claims.** `private.has_permission()` reads `staff_members` + `role_permissions` on every call and requires `aal = aal2`. Suspending a staff member or changing a role takes effect on their next query.
+2. **Current permissions, not cached claims.** `private.has_permission()` reads `staff_members` + `role_permissions` on every call and requires `aal = aal2` while staff MFA is switched on (`private.security_settings`, default off). Suspending a staff member or changing a role takes effect on their next query.
 3. **Money is integer poisha.** `price_minor`, `total_minor` etc. Formatting happens only at the edge (`lib/money.ts`).
 4. **Stock never changes without the ledger.** All stock changes go through `private.apply_stock_movement()`, which row-locks the balance, validates, updates, and appends to `stock_movements` (immutable). See `docs/INVENTORY_TRANSACTIONS.md`.
 5. **Guest carts are capability tokens.** A 256-bit random token in an httpOnly cookie; Postgres stores only its SHA-256. Cart RPCs re-price from the DB every time.

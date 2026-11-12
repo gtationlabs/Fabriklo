@@ -19,7 +19,13 @@ export const pool = new Pool({ connectionString: DB_URL, max: 30 });
 
 export type Actor =
   | { role: "anon" }
-  | { role: "authenticated"; sub: string; aal?: "aal1" | "aal2" }
+  | {
+      role: "authenticated";
+      sub: string;
+      aal?: "aal1" | "aal2";
+      /** Staff MFA switch for this transaction only (the suite runs with it ON). */
+      staffMfa?: boolean;
+    }
   | { role: "service_role" };
 
 export type Sql = {
@@ -47,6 +53,9 @@ export async function as<T>(actor: Actor, fn: (sql: Sql) => Promise<T>): Promise
   const client: PoolClient = await pool.connect();
   try {
     await client.query("begin");
+    if (actor.role === "authenticated" && actor.staffMfa === false) {
+      await client.query(`update private.security_settings set staff_mfa_required = false`);
+    }
     await client.query(`select set_config('request.jwt.claims', $1, true)`, [
       JSON.stringify(claimsFor(actor)),
     ]);

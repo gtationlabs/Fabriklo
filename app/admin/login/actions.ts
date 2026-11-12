@@ -31,7 +31,8 @@ export async function signInStaff(_prev: LoginState, formData: FormData): Promis
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   // Same message for unknown user / wrong password to avoid account enumeration.
   if (error) return { error: "Email or password is incorrect." };
-  redirect("/admin/mfa");
+  // The console layout sends the session on to /admin/mfa when staff MFA is switched on.
+  redirect("/admin");
 }
 
 export async function signOut() {
