@@ -1,6 +1,6 @@
 # Implementation status
 
-_Last updated: 2026-11-12 · Milestone: foundation, slice 1 (catalog/admin), slice 2 (orders + cash on delivery), slice 3 (scroll store tour + hero editor), slice 4 (content pages + customer accounts), slice 5 (online payment + courier webhooks), slice 6 (AI virtual try-on), slice 7 (marketing, coupons, automation), slice 8 (theme versions, staff, audit log, settings), slice 9 (hardening), slice 10 (product photos, purchase orders, transfers), home page sections (3D store tour, "On the rail", department rows, customer reviews), catalogue listing redesign, product page redesign, storefront pages in the catalogue style_
+_Last updated: 2026-11-12 · Milestone: foundation, slice 1 (catalog/admin), slice 2 (orders + cash on delivery), slice 3 (scroll store tour + hero editor), slice 4 (content pages + customer accounts), slice 5 (online payment + courier webhooks), slice 6 (AI virtual try-on), slice 7 (marketing, coupons, automation), slice 8 (theme versions, staff, audit log, settings), slice 9 (hardening), slice 10 (product photos, purchase orders, transfers), home page sections (3D store tour, "On the rail", department rows, customer reviews), catalogue listing redesign, product page redesign, storefront pages in the catalogue style, demo accounts per role_
 
 This file is the honest source of truth for what exists. It does **not** claim production readiness.
 
@@ -68,6 +68,8 @@ API: `GET /api/products`, `GET /api/cart`, `POST|PATCH|DELETE /api/cart/items`, 
 
 ## Launch blockers (must be cleared before production)
 
+- **Delete the demo accounts** (`npm run seed:demo-users -- --remove`) from any project that becomes production, and never seed them there: they share the public password in the README. Create a real owner with `npm run staff:create` first, because the database refuses to remove the last super admin.
+
 - FASHN try-on has not been exercised against the real API (adapter, privacy choices and budget cap built; needs the key, a real garment photo and one run). Garment photos for real products must be uploaded by the owner; the seed uses a labelled placeholder drawing.
 - SSLCOMMERZ has not been exercised against the real sandbox (adapter + verification built; needs credentials, a public IPN URL and one end-to-end run before go-live). No gateway refund flow yet.
 - Shipping zone fees and the COD limit are **demo values** until the owner enters real ones in Admin → Settings and ticks "real rates" (the settings page shows a warning until then).
@@ -82,6 +84,8 @@ API: `GET /api/products`, `GET /api/cart`, `POST|PATCH|DELETE /api/cart/items`, 
 - Staff invitations and password-reset links are shown once to the inviting admin (nothing is emailed from the app); the admin sends them to the person. Both need `SUPABASE_SECRET_KEY` on the server.
 
 ## Known limitations / decisions
+
+- Demo accounts (`npm run seed:demo-users`, DEV / SANDBOX ONLY): owner (`super_admin`), admin, manager (new `store_manager` role, migration `20261112000100`), staff (`support_agent`) and customer, all `@demo.fabriklo.local` with password `Fabriklo-Demo-2026!`. MFA is **not** relaxed for them: the script enrols a TOTP factor per staff account and `npm run demo:otp` prints the code, so RLS keeps requiring aal2 everywhere. See README → Demo accounts.
 
 - `cacheComponents` is disabled (most commerce routes read cookies); revisit for catalog caching.
 - Product photos don't exist yet: products show a clearly labelled colour placeholder, never stock photos.

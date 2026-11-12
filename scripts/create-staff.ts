@@ -10,7 +10,7 @@
 import { randomBytes } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 
-const ROLES = ["super_admin", "admin", "catalog_manager", "inventory_manager", "order_manager", "support_agent", "marketing_manager", "content_editor", "analyst"];
+const ROLES = ["super_admin", "admin", "store_manager", "catalog_manager", "inventory_manager", "order_manager", "support_agent", "marketing_manager", "content_editor", "analyst"];
 
 async function main() {
   const [email, role = "super_admin"] = process.argv.slice(2);

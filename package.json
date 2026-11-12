@@ -15,7 +15,9 @@
     "db:reset": "supabase db reset",
     "db:lint": "supabase db lint --level warning",
     "staff:create": "tsx --env-file=.env.local scripts/create-staff.ts",
-    "demo:art": "tsx scripts/generate-demo-product-art.ts"
+    "demo:art": "tsx scripts/generate-demo-product-art.ts",
+    "seed:demo-users": "tsx --env-file=.env.local scripts/seed-demo-users.ts",
+    "demo:otp": "tsx scripts/demo-otp.ts"
   },
   "dependencies": {
     "@sentry/nextjs": "^11.9.0",

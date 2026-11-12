@@ -34,6 +34,9 @@ yarn-error.log*
 .env*
 !.env.example
 
+# demo account MFA secrets (npm run seed:demo-users)
+.demo-users.local.json
+
 # vercel
 .vercel
 
