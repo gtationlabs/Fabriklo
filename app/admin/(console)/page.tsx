@@ -109,10 +109,10 @@ export default async function AdminOverview({ searchParams }: PageProps<"/admin"
         <div aria-hidden="true" className="pointer-events-none absolute -bottom-28 right-40 size-64 rounded-full bg-wood/40 blur-3xl" />
         <div className="relative flex flex-wrap items-end justify-between gap-6">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-cream/60">Dashboard</p>
-            <h1 className="mt-1 font-display text-3xl font-semibold sm:text-4xl">
+            <h1 className="text-xs font-normal uppercase tracking-[0.2em] text-cream/60">Dashboard</h1>
+            <p className="mt-1 font-display text-3xl font-semibold sm:text-4xl">
               {greeting}, {firstName}
-            </h1>
+            </p>
             <p className="mt-1 text-sm text-cream/75">
               Here is how the store is doing over the {periodLabel}. Updated {updated} (Dhaka time).
             </p>
@@ -176,7 +176,7 @@ export default async function AdminOverview({ searchParams }: PageProps<"/admin"
         {s.catalog ? (
           <Panel title="Catalogue" subtitle="Live products per category" icon={Package} href="/admin/categories" hrefLabel="Categories">
             <div className="mb-4 grid grid-cols-3 gap-2 text-center">
-              <MiniStat label="Active" value={s.catalog.active} />
+              <MiniStat label="Active products" value={s.catalog.active} href="/admin/products?status=active" />
               <MiniStat label="Drafts" value={s.catalog.draft} href="/admin/products?status=draft" />
               <MiniStat label="Categories" value={s.catalog.active_categories} />
             </div>
