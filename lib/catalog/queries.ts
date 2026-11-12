@@ -22,6 +22,8 @@ export type ProductCard = {
   /** Primary photo (public bucket path or same-origin asset), null until staff upload one. */
   image_path: string | null;
   image_alt: string | null;
+  /** SKU stem shared by the product's variants (e.g. "OXFORDBU"), shown on listing cards. */
+  style_code: string | null;
 };
 
 export type Facets = {
@@ -50,7 +52,7 @@ export async function searchProducts(f: CatalogFilters, pageSize = PAGE_SIZE) {
   if (error) throw new Error("Catalog search failed");
   const rows = (data ?? []) as (ProductCard & { total_count: number })[];
   return {
-    products: rows.map((r) => ({ ...r, sizes: sortSizes(r.sizes ?? []), colors: r.colors ?? [] })) as ProductCard[],
+    products: rows.map((r) => ({ ...r, style_code: r.style_code ?? null, sizes: sortSizes(r.sizes ?? []), colors: r.colors ?? [] })) as ProductCard[],
     total: rows[0]?.total_count ?? 0,
     pageSize,
   };
@@ -128,4 +130,18 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
       })),
     media: [...row.media].sort((a, b) => a.position - b.position),
   };
+}
+
+export type CollectionLink = { slug: string; name: string };
+
+/** Published collections in admin order: the "tier" pills on listing pages. */
+export async function getCollections(): Promise<CollectionLink[]> {
+  const { data, error } = await createSupabasePublicClient()
+    .from("collections")
+    .select("slug, name")
+    .order("position")
+    .order("name")
+    .limit(12);
+  if (error || !data) return [];
+  return (data as CollectionLink[]).map((c) => ({ slug: String(c.slug), name: c.name }));
 }

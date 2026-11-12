@@ -105,5 +105,7 @@ export function demoProductCards(): ProductCard[] {
     available: 1,
     image_path: demoArtPath(d.slug),
     image_alt: `Illustration of the ${d.title} (demo product)`,
+    // Same stem as the seeded variant SKUs (see supabase/seed.sql).
+    style_code: d.slug.replace(/[^a-z]/g, "").slice(0, 8).toUpperCase(),
   }));
 }

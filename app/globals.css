@@ -17,6 +17,9 @@
   --color-line: #d9cdbb;
   --color-danger: #a1301f;
   --color-success: #2f6b3a;
+  /* Catalogue surfaces (department rows, listing pages): cool grey and near-black. */
+  --color-mist: #f3f3f5;
+  --color-ink: #141414;
   /* Fonts and radii come from the published theme (lib/theme/tokens.ts); these are the defaults. */
   --font-display: var(--font-cormorant);
   --font-body: var(--font-inter);
@@ -39,6 +42,9 @@
   --color-line: var(--color-line);
   --color-danger: var(--color-danger);
   --color-success: var(--color-success);
+  --color-mist: var(--color-mist);
+  --color-ink: var(--color-ink);
+  --font-catalog: var(--font-dm-sans), var(--font-body), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-display), ui-serif, Georgia, serif;
   --radius-sm: var(--ui-radius-sm);

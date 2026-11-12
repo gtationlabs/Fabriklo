@@ -7,6 +7,14 @@ const formatter = new Intl.NumberFormat("en-BD", {
   maximumFractionDigits: 2,
 });
 
+const plain = new Intl.NumberFormat("en-BD", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+
+/** "BDT 1,290": the currency-code style used on catalogue cards. */
+export function formatBDTCode(minor: number | null | undefined): string {
+  if (minor == null || !Number.isFinite(minor)) return "";
+  return `BDT ${plain.format(minor / 100)}`;
+}
+
 export function formatBDT(minor: number | null | undefined): string {
   if (minor == null || !Number.isFinite(minor)) return "";
   return formatter.format(minor / 100);
