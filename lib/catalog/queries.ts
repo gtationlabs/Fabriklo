@@ -2,6 +2,7 @@ import "server-only";
 import { createSupabasePublicClient } from "@/lib/supabase/public";
 import { PAGE_SIZE, type CatalogFilters } from "./filters";
 import { sortSizes } from "./sizes";
+import { styleCode } from "./product-page";
 
 export type ProductCard = {
   id: string;
@@ -79,6 +80,10 @@ export type ProductDetail = {
   seo_title: string | null;
   seo_description: string | null;
   category: { slug: string; name: string } | null;
+  /** First published collection the product belongs to (other than New Arrivals), for the breadcrumb. */
+  collection: { slug: string; name: string } | null;
+  /** SKU stem shared by the variants, shown as the product code. */
+  style_code: string | null;
   variants: {
     id: string;
     sku: string;
@@ -98,14 +103,16 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, slug, title, subtitle, description, materials, care, audience, is_demo, tryon_enabled, seo_title, seo_description, category:categories(slug, name), variants:product_variants(id, sku, size, color, color_hex, price_minor, compare_at_minor, position), media:product_media(id, storage_path, alt, position, is_tryon_garment, variant_id, width, height)",
+      "id, slug, title, subtitle, description, materials, care, audience, is_demo, tryon_enabled, seo_title, seo_description, category:categories(slug, name), variants:product_variants(id, sku, size, color, color_hex, price_minor, compare_at_minor, position), media:product_media(id, storage_path, alt, position, is_tryon_garment, variant_id, width, height), collections:collection_products(collection:collections(slug, name, position))",
     )
     .eq("slug", slug)
     .maybeSingle();
   if (error || !data) return null;
 
-  type Row = Omit<ProductDetail, "variants" | "category"> & {
+  type Coll = { slug: string; name: string; position: number };
+  type Row = Omit<ProductDetail, "variants" | "category" | "collection" | "style_code"> & {
     category: { slug: string; name: string } | { slug: string; name: string }[] | null;
+    collections: { collection: Coll | Coll[] | null }[] | null;
     variants: (Omit<ProductDetail["variants"][number], "available"> & { position: number })[];
   };
   const row = data as unknown as Row;
@@ -113,8 +120,20 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
   const { data: avail } = await supabase.rpc("get_variant_availability", { p_variant_ids: ids });
   const byId = new Map(((avail ?? []) as { variant_id: string; available: number }[]).map((a) => [a.variant_id, a.available]));
 
+  // RLS hides unpublished collections, so they come back as null here.
+  const collection =
+    (row.collections ?? [])
+      .flatMap((c) => (Array.isArray(c.collection) ? c.collection : c.collection ? [c.collection] : []))
+      .filter((c) => String(c.slug) !== "new-arrivals")
+      .sort((a, b) => a.position - b.position)
+      .map((c) => ({ slug: String(c.slug), name: c.name }))[0] ?? null;
+  const { collections: _collections, ...rest } = row;
+  void _collections;
+
   return {
-    ...row,
+    ...rest,
+    collection,
+    style_code: styleCode(row.variants.map((v) => String(v.sku))),
     category: Array.isArray(row.category) ? (row.category[0] ?? null) : row.category,
     variants: row.variants
       .sort((a, b) => a.position - b.position)

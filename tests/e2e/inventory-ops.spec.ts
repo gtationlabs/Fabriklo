@@ -118,7 +118,7 @@ test.describe("product photos, purchase orders and transfers (admin)", () => {
     await page.goto(`/product/${product.slug}`);
     const gallery = page.getByTestId("product-gallery");
     await expect(gallery.getByTestId("gallery-main")).toHaveAttribute("alt", "E2E back view of the tee");
-    await page.getByRole("button", { name: /^Show photo 2/ }).click();
+    await gallery.getByRole("button", { name: "Next photo" }).click();
     await expect(gallery.getByTestId("gallery-main")).toHaveAttribute("alt", /E2E studio photo/);
 
     // Removal (confirm dialog) and the storage object goes with it.

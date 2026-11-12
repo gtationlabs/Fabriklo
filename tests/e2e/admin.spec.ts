@@ -109,7 +109,7 @@ test.describe("staff vertical slice", () => {
     await expect(page.getByTestId("price")).toContainText("1,890");
     await page.locator('input[name="size"][value="M"]').locator("xpath=..").click();
     await expect(page.getByTestId("availability")).toHaveText("In stock");
-    await page.getByRole("button", { name: "Add to cart" }).click();
+    await page.getByRole("button", { name: "Add to bag" }).click();
     await expect(page.getByRole("status")).toContainText("Added 1");
 
     // Archive again so repeated runs don't clutter the demo shop
