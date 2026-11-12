@@ -18,7 +18,7 @@ export type Testimonial = {
   quote: string;
   product: string;
   size: string;
-  fit: "true" | "small" | "large";
+  fit: "true" | "small" | "large" | null;
   /** Hang-tag colour (hex), picked to suit the piece. */
   swatch: string;
 };
@@ -136,15 +136,52 @@ export function summarizeReviews(reviews: Pick<Testimonial, "rating" | "fit">[])
     average: Math.round((total / count) * 10) / 10,
     count,
     distribution,
-    trueToSize: reviews.filter((r) => r.fit === "true").length / count,
+    // Share among the reviews that said anything about fit.
+    trueToSize: (() => {
+      const told = reviews.filter((r) => r.fit !== null).length;
+      return told ? reviews.filter((r) => r.fit === "true").length / told : 0;
+    })(),
   };
 }
 
-export const FIT_LABEL: Record<Testimonial["fit"], string> = {
+export const FIT_LABEL: Record<NonNullable<Testimonial["fit"]>, string> = {
   true: "True to size",
   small: "Runs small",
   large: "Runs large",
 };
+
+const SWATCHES = ["#c9b48f", "#5f6b52", "#a35f3c", "#7d8fa3", "#b9a28a", "#6b4e3d", "#8c8a6f"];
+
+export type FeaturedReviewRow = {
+  id: string; author_name: string; author_city: string; rating: number; title: string; body: string;
+  fit: "true" | "small" | "large" | null; size_bought: string | null; product_title: string;
+};
+
+/** Approved, featured reviews from Admin → Reviews, shaped for the home deck. */
+export function toTestimonials(rows: FeaturedReviewRow[]): Testimonial[] {
+  return rows.map((r, i) => {
+    const first = r.body.split(/(?<=[.!?])\s/)[0] ?? r.body;
+    return {
+      id: r.id,
+      name: r.author_name,
+      city: r.author_city,
+      rating: Math.min(5, Math.max(1, Math.round(r.rating))) as Testimonial["rating"],
+      title: r.title || first.slice(0, 60),
+      body: r.body,
+      quote: first.length > 90 ? `${first.slice(0, 87)}…` : first,
+      product: r.product_title,
+      size: r.size_bought ?? "",
+      fit: r.fit,
+      swatch: SWATCHES[i % SWATCHES.length]!,
+    };
+  });
+}
+
+/** Real reviews once at least three are featured; the labelled samples until then. */
+export function pickHomeTestimonials(featured: FeaturedReviewRow[]): { reviews: Testimonial[]; sample: boolean } {
+  if (featured.length >= 3) return { reviews: toTestimonials(featured), sample: false };
+  return { reviews: SAMPLE_TESTIMONIALS, sample: true };
+}
 
 /** The reviews the home page shows, and whether they are samples. */
 export function getHomeTestimonials(): { reviews: Testimonial[]; sample: boolean } {

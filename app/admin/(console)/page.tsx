@@ -33,7 +33,7 @@ export default async function AdminOverview({ searchParams }: PageProps<"/admin"
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="font-display text-3xl font-semibold text-espresso">Overview</h1>
+        <h1 className="font-display text-3xl font-semibold text-espresso">Dashboard</h1>
         <p className="text-sm text-muted">Live figures from the database. Catalogue figures include demo products in development.</p>
       </header>
       {denied ? (

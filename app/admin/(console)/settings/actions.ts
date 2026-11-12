@@ -27,7 +27,7 @@ async function updateSetting(key: string, value: unknown, paths: string[] = []):
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc("admin_update_site_setting", { p_key: key, p_value: value });
   if (error) return { ok: false, message: friendlyDbError(error) };
-  revalidatePath("/admin/settings");
+  revalidatePath("/admin", "layout");
   for (const p of paths) revalidatePath(p, "layout");
   return { ok: true, message: "Saved." };
 }
@@ -135,7 +135,7 @@ export async function saveZone(_prev: SettingsActionState, fd: FormData): Promis
     },
   });
   if (error) return { ok: false, message: friendlyDbError(error), values };
-  revalidatePath("/admin/settings");
+  revalidatePath("/admin", "layout");
   revalidatePath("/checkout");
   return { ok: true, message: d.id ? "Zone saved. New checkout quotes use it immediately." : "Zone created." };
 }

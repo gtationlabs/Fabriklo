@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Mail, MapPin, Phone } from "lucide-react";
-import { getStoreContact, getStoreIdentity } from "@/lib/settings/public";
+import { getStoreContact, getStoreIdentity, getStoreSocial } from "@/lib/settings/public";
 import { NewsletterForm } from "./newsletter-form";
 import { Turnstile } from "@/components/security/turnstile";
 
@@ -41,7 +41,11 @@ const COLUMNS = [
 ] as const;
 
 export async function SiteFooter() {
-  const [identity, contact] = await Promise.all([getStoreIdentity(), getStoreContact()]);
+  const [identity, contact, social] = await Promise.all([getStoreIdentity(), getStoreContact(), getStoreSocial()]);
+  const socialLinks = ([
+    ["Facebook", social.facebook], ["Instagram", social.instagram], ["TikTok", social.tiktok], ["YouTube", social.youtube],
+    ["WhatsApp", social.whatsapp ? `https://wa.me/${social.whatsapp.replace(/^\+/, "")}` : ""],
+  ] as const).filter(([, href]) => href);
   return (
     <footer className="bg-ink font-catalog text-white">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
@@ -68,6 +72,13 @@ export async function SiteFooter() {
               ) : null}
               {contact.hours ? <p className="pl-[22px]">{contact.hours}</p> : null}
             </address>
+          ) : null}
+          {socialLinks.length ? (
+            <ul aria-label="Follow us" className="mt-5 flex flex-wrap gap-2 text-[12px]" data-testid="footer-social">
+              {socialLinks.map(([label, href]) => (
+                <li key={label}><a href={href} target="_blank" rel="noopener noreferrer" className="inline-block rounded-full border border-white/30 px-3 py-1 hover:bg-white hover:text-ink">{label}</a></li>
+              ))}
+            </ul>
           ) : null}
           <div className="mt-6 max-w-sm">
             <NewsletterForm challenge={<Turnstile action="newsletter" />} />

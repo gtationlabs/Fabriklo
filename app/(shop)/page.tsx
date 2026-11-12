@@ -10,24 +10,31 @@ import { getStoreIdentity } from "@/lib/settings/public";
 import { DepartmentRows } from "@/components/home/department-rows";
 import { buildDepartments } from "@/lib/catalog/departments";
 import { CustomerReviews } from "@/components/home/customer-reviews";
-import { getHomeTestimonials } from "@/lib/reviews/testimonials";
+import { pickHomeTestimonials } from "@/lib/reviews/testimonials";
+import { getFeaturedReviews } from "@/lib/reviews/queries";
+import { PromoSlider } from "@/components/home/promo-slider";
+import { getLiveSlides } from "@/lib/cms/slides";
 
 export default async function HomePage() {
-  const [tour, featured, newest, facets, rail, identity] = await Promise.all([
+  const [tour, featured, newest, facets, rail, identity, slides, featuredReviews] = await Promise.all([
     getPublishedHero(),
     searchProducts(parseFilters({ sort: "featured" }), 8),
     searchProducts(parseFilters({}), 4),
     getFacets(),
     searchProducts(parseFilters({ sort: "featured" }), 40),
     getStoreIdentity(),
+    getLiveSlides(),
+    getFeaturedReviews(),
   ]);
   // The rail query is the 40 featured-first pieces; the department rows group the same cards.
   const departments = buildDepartments(rail.products, facets.categories);
-  const testimonials = getHomeTestimonials();
+  const testimonials = pickHomeTestimonials(featuredReviews);
 
   return (
     <>
       <StoreTour scenes={tour.scenes} settings={tour.settings} />
+
+      <PromoSlider slides={slides} />
 
       <GarmentRail
         garments={railGarments(rail.products)}

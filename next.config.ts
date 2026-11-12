@@ -26,6 +26,9 @@ const nextConfig: NextConfig = {
   // behaviour easier to reason about. Revisit for catalog pages later.
   cacheComponents: false,
   poweredByHeader: false,
+  // Photo uploads (products, slides, avatars) go through server actions; the
+  // files are capped at 10 MB each and re-encoded on the server.
+  experimental: { serverActions: { bodySizeLimit: "12mb" } },
   turbopack: {
     rules: {
       "*.css": {

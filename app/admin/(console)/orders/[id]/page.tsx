@@ -30,6 +30,8 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
       : Promise.resolve({ data: [] as { id: number; rule_code: string; level: string; explanation: string; created_at: string }[] }),
     supabase.from("payment_transactions").select("id, provider, tran_id, attempt, status, amount_minor, currency, gateway_val_id, bank_tran_id, card_type, gateway_risk_level, settled_at, created_at").eq("order_id", id).order("attempt"),
   ]);
+  const { data: courierSetting } = await supabase.from("site_settings").select("value").eq("key", "shipping.courier").maybeSingle();
+  const defaultCourier = (courierSetting?.value as { default_courier?: string } | null)?.default_courier;
   const txIds = (payments ?? []).map((t) => t.id);
   const { data: payEvents } = txIds.length
     ? await supabase.from("payment_events").select("id, transaction_id, kind, status, created_at").in("transaction_id", txIds).order("id")
@@ -47,6 +49,10 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
           <h1 className="font-display text-3xl font-semibold text-espresso">
             {order.order_number} {order.is_demo ? <DemoBadge className="align-middle" /> : null}
           </h1>
+          <p className="mt-1 flex gap-3 text-sm">
+            <Link href={`/admin/orders/${order.id}/invoice`} className="underline" target="_blank">Print invoice</Link>
+            <Link href={`/admin/orders/${order.id}/invoice?slip=1`} className="underline" target="_blank">Print packing slip</Link>
+          </p>
           <p className="text-sm text-muted">Placed {dateFmt.format(new Date(order.placed_at))} · {order.payment_method === "cod" ? "Cash on delivery" : (payments ?? []).some((t) => t.provider === "mock") ? "Online payment (sandbox mock, not a real payment)" : "Online payment"}</p>
         </div>
         <div className="flex flex-wrap gap-2" data-testid="order-statuses">
@@ -169,7 +175,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
           {can("orders.fulfill") && !cancelled ? (
             <>
               <TransitionForm orderId={order.id} field="shipment_status" title="Shipment" current={order.shipment_status} options={next("shipment_status")} />
-              <ShipmentForm orderId={order.id} shipment={shipment} />
+              <ShipmentForm orderId={order.id} shipment={shipment} defaultCourier={defaultCourier} />
               <TransitionForm orderId={order.id} field="payment_status" title="Payment" current={order.payment_status} options={next("payment_status")} />
             </>
           ) : null}

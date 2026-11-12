@@ -38,7 +38,7 @@ async function enrolMfa(page: Page) {
   const code = new OTPAuth.TOTP({ secret: OTPAuth.Secret.fromBase32(secret), digits: 6, period: 30 }).generate();
   await page.getByLabel("Authentication code").fill(code);
   await page.getByRole("button", { name: "Verify" }).click();
-  await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
 }
 
 async function signInWithMfa(page: Page, email: string, password: string) {
@@ -146,8 +146,7 @@ test.describe("theme, settings, staff and audit (admin)", () => {
     created.push(admin.id);
     await signInWithMfa(page, admin.email, admin.password);
 
-    await page.goto("/admin/settings");
-    await expect(page.getByTestId("demo-rates-warning")).toBeVisible();
+    await page.goto("/admin/settings/store");
     const identity = page.getByRole("form", { name: "Store identity" });
     await identity.getByLabel(/^Store name/).fill("E2E Boutique");
     await identity.getByRole("button", { name: "Save identity" }).click();
@@ -157,6 +156,7 @@ test.describe("theme, settings, staff and audit (admin)", () => {
     await identity.getByRole("button", { name: "Save identity" }).click();
     await expect(identity.getByRole("alert")).toContainText("angle brackets");
 
+    await page.goto("/admin/payment-methods");
     const cod = page.getByRole("form", { name: "Cash on delivery" });
     await cod.getByLabel(/^Maximum order for cash on delivery/).fill("50");
     await cod.getByRole("button", { name: "Save cash on delivery" }).click();
@@ -165,6 +165,8 @@ test.describe("theme, settings, staff and audit (admin)", () => {
     await cod.getByRole("button", { name: "Save cash on delivery" }).click();
     await expect(cod.getByRole("status")).toContainText("saved");
 
+    await page.goto("/admin/shipping-zones");
+    await expect(page.getByTestId("demo-rates-warning")).toBeVisible();
     const zone = page.getByRole("form", { name: /^Zone: Inside Dhaka/ });
     await zone.getByLabel("Delivery fee (৳)").fill("99");
     await zone.getByRole("button", { name: "Save zone" }).click();
@@ -217,7 +219,7 @@ test.describe("theme, settings, staff and audit (admin)", () => {
     const ctx = await browser.newContext();
     const sp = await ctx.newPage();
     await signInWithMfa(sp, support.email, support.password);
-    await sp.goto("/admin/settings");
+    await sp.goto("/admin/settings/store");
     await expect(sp).toHaveURL(/\/admin\?denied=settings\.manage/);
     await sp.goto("/admin/audit");
     await expect(sp).toHaveURL(/\/admin\?denied=audit\.read/);

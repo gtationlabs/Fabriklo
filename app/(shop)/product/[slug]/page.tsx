@@ -7,6 +7,8 @@ import { ProductCard } from "@/components/shop/product-card";
 import { CarouselItem, ProductCarousel } from "@/components/shop/product-carousel";
 import { ProductView, type ViewPhoto } from "@/components/shop/product-view";
 import { RecentlyViewed } from "@/components/shop/recently-viewed";
+import { ProductReviewsSection } from "@/components/shop/product-reviews";
+import { getProductReviews } from "@/lib/reviews/queries";
 import { WishlistButton } from "@/components/shop/wishlist";
 import { garmentKind } from "@/components/shop/garment-art";
 import { TryonPanel } from "@/components/tryon/tryon-panel";
@@ -52,7 +54,9 @@ export default async function ProductPage({ params }: PageProps<"/product/[slug]
   const demoArt = photos.length === 0 && product.is_demo ? demoArtPath(product.slug) : null;
   const artKind = photos.length === 0 && product.category?.slug !== "accessories" ? garmentKind(product.category?.slug ?? null, product.title) : null;
 
-  const [identity, contact, related] = await Promise.all([getStoreIdentity(), getStoreContact(), relatedProducts(product)]);
+  const [identity, contact, related, reviews, reviewer] = await Promise.all([
+    getStoreIdentity(), getStoreContact(), relatedProducts(product), getProductReviews(product.id), customer ? Promise.resolve(customer) : getCustomer(),
+  ]);
   const crumbs = productBreadcrumb(product);
   const url = `${publicEnv.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "")}/product/${product.slug}`;
 
@@ -126,6 +130,15 @@ export default async function ProductPage({ params }: PageProps<"/product/[slug]
             </details>
           </div>
         </ProductView>
+
+        <ProductReviewsSection
+          productId={product.id}
+          slug={product.slug}
+          data={reviews}
+          signedIn={!!reviewer}
+          defaultName={reviewer?.fullName ? `${reviewer.fullName.split(" ")[0]} ${(reviewer.fullName.split(" ")[1] ?? "").slice(0, 1)}`.trim() : ""}
+          sizes={[...new Set(product.variants.map((v) => v.size))]}
+        />
 
         {related.length ? (
           <div className="mt-24">

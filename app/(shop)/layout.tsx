@@ -4,6 +4,7 @@ import { MarketingBanner } from "@/components/shop/marketing-banner";
 import { SiteFooter } from "@/components/shop/site-footer";
 import { SiteHeader } from "@/components/shop/site-header";
 import { headers } from "next/headers";
+import { getMetaPixelIds } from "@/lib/settings/public";
 
 const GA4 = process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID || null;
 const PIXEL = process.env.NEXT_PUBLIC_META_PIXEL_ID || null;
@@ -11,6 +12,7 @@ const PIXEL = process.env.NEXT_PUBLIC_META_PIXEL_ID || null;
 export default async function ShopLayout({ children }: { children: React.ReactNode }) {
   // CSP nonce minted in proxy.ts; third-party tags must carry it.
   const nonce = (await headers()).get("x-nonce") ?? undefined;
+  const pixels = [...new Set([...(PIXEL ? [PIXEL] : []), ...(await getMetaPixelIds())])].slice(0, 5);
   return (
     <>
       <a href="#main" className="skip-link">
@@ -22,8 +24,8 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
         {children}
       </main>
       <SiteFooter />
-      <ConsentBanner hasTags={Boolean(GA4 || PIXEL)} />
-      <AnalyticsTags ga4={GA4} pixel={PIXEL} nonce={nonce} />
+      <ConsentBanner hasTags={Boolean(GA4 || pixels.length)} />
+      <AnalyticsTags ga4={GA4} pixels={pixels} nonce={nonce} />
     </>
   );
 }

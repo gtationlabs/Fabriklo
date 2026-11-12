@@ -82,6 +82,41 @@ export function CheckoutForm({
   const [submitting, setSubmitting] = useState(false);
   const errorRef = useRef<HTMLDivElement>(null);
 
+  // Checkout lead: once a valid mobile number is typed, what the shopper has
+  // entered so far is saved (debounced, only when it changed) so staff can call
+  // back if the order never arrives.
+  const lastLead = useRef("");
+  const leadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveLead = useCallback((formEl: HTMLFormElement | null) => {
+    if (!formEl) return;
+    const fd = new FormData(formEl);
+    const g = (k: string) => String(fd.get(k) ?? "").trim();
+    if (!normalizeBdPhone(g("phone"))) return;
+    const payload = JSON.stringify({ name: g("name").slice(0, 120), phone: g("phone"), email: g("email").slice(0, 254) || undefined, district: g("district") || undefined, addressLine: g("addressLine").slice(0, 300) || undefined });
+    if (payload === lastLead.current) return;
+    if (leadTimer.current) clearTimeout(leadTimer.current);
+    leadTimer.current = setTimeout(() => {
+      lastLead.current = payload;
+      void fetch("/api/checkout/lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: payload }).catch(() => undefined);
+    }, 800);
+  }, []);
+  useEffect(() => () => { if (leadTimer.current) clearTimeout(leadTimer.current); }, []);
+
+  const [methodBusy, setMethodBusy] = useState(false);
+  async function chooseMethod(code: string) {
+    setMethodBusy(true);
+    try {
+      const res = await fetch("/api/checkout/shipping-method", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code }) });
+      if (res.status === 404) {
+        router.replace("/cart");
+        return;
+      }
+      await loadQuote(district);
+    } finally {
+      setMethodBusy(false);
+    }
+  }
+
   const seq = useRef(0);
   const loadQuote = useCallback(async (d: string) => {
     const mine = ++seq.current;
@@ -255,7 +290,7 @@ export function CheckoutForm({
   const lines = quote?.lines ?? cart.items.map((i) => ({ ...i, title: i.title }));
 
   return (
-    <form onSubmit={onSubmit} noValidate className="mt-8 grid gap-10 lg:grid-cols-[1fr_340px]">
+    <form onSubmit={onSubmit} onBlur={(e) => saveLead(e.currentTarget)} noValidate className="mt-8 grid gap-10 lg:grid-cols-[1fr_340px]">
       <div className="space-y-8">
         {formError ? (
           <div
@@ -270,6 +305,7 @@ export function CheckoutForm({
 
         <fieldset className="space-y-4">
           <legend className="font-semibold text-espresso">Contact</legend>
+          <p className="text-xs text-muted">We save these details as you type, so we can help if your order doesn&apos;t go through.</p>
           <div>
             <label htmlFor={`${formId}-name`} className="text-sm font-medium">Full name</label>
             <input {...field("name")} defaultValue={prefill?.name ?? ""} autoComplete="name" required className={inputCls} />
@@ -344,6 +380,25 @@ export function CheckoutForm({
             <textarea {...field("note")} rows={2} maxLength={500} className={inputCls} />
           </div>
         </fieldset>
+
+        {quote?.shipping_methods && quote.shipping_methods.length > 1 ? (
+          <fieldset aria-busy={methodBusy} data-testid="delivery-options">
+            <legend className="font-semibold text-espresso">Delivery option</legend>
+            <div className="mt-3 space-y-3">
+              {quote.shipping_methods.map((m) => (
+                <label key={m.code} className={`flex items-start gap-3 rounded border p-4 ${quote.shipping_method === m.code ? "border-bronze bg-cream" : "border-line bg-white"}`}>
+                  <input type="radio" name="shippingMethod" value={m.code} checked={quote.shipping_method === m.code} disabled={methodBusy} onChange={() => void chooseMethod(m.code)} className="mt-1 accent-bronze" />
+                  <span>
+                    <span className="font-medium text-espresso">{m.name}</span>
+                    {m.fee_adjust_minor > 0 ? <span className="ml-2 text-sm text-muted">+{formatBDT(m.fee_adjust_minor)}</span> : null}
+                    {m.description ? <span className="block text-sm text-muted">{m.description}</span> : null}
+                    {!m.cod_allowed ? <span className="block text-xs text-bronze-strong">Online payment only</span> : null}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        ) : null}
 
         <fieldset>
           <legend className="font-semibold text-espresso">Payment</legend>

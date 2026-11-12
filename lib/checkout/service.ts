@@ -214,3 +214,23 @@ export async function trackOrder(orderNumber: string, token: string): Promise<Tr
   if (error || !data) return null;
   return data as TrackedOrder;
 }
+
+/** Saves what the shopper has typed so far as a checkout lead (staff can follow up). */
+export async function captureLead(lead: { name: string; phone: string; email?: string; district?: string; addressLine?: string }): Promise<boolean> {
+  const token = await cartToken();
+  if (!token) return false;
+  const { data, error } = await createSupabasePublicClient().rpc("capture_checkout_lead", {
+    p_cart_token: token,
+    p_lead: { name: lead.name, phone: lead.phone, email: lead.email ?? "", district: lead.district ?? "", address_line: lead.addressLine ?? "" },
+  });
+  return !error && data === true;
+}
+
+/** Picks the cart's delivery option; the next quote includes its fee. */
+export async function setShippingMethod(code: string): Promise<"ok" | "cart_missing" | "invalid"> {
+  const token = await cartToken();
+  if (!token) return "cart_missing";
+  const { data, error } = await createSupabasePublicClient().rpc("checkout_set_shipping_method", { p_cart_token: token, p_code: code });
+  if (error) return "invalid";
+  return data === true ? "ok" : "cart_missing";
+}
