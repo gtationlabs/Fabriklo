@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CopyLink } from "@/components/orders/copy-link";
+import { StorePage, btnPrimary } from "@/components/shop/store-page";
 import { OrderTracking } from "@/components/orders/order-tracking";
 import { lastOrderFromCookie, trackOrder } from "@/lib/checkout/service";
 import { publicEnv } from "@/lib/env";
@@ -22,11 +23,9 @@ export default async function PaymentResultPage({ searchParams }: PageProps<"/or
 
   if (!receipt || !state) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6">
-        <h1 className="font-display text-3xl font-semibold text-espresso">No recent order here</h1>
-        <p className="mt-3 text-muted">If you placed an order, use the tracking link we showed you after checkout, or check your account.</p>
-        <Link href="/orders/track" className="mt-6 inline-block rounded bg-espresso px-5 py-2.5 text-cream">Track an order</Link>
-      </div>
+      <StorePage title="No recent order here" width="text" crumbs={[{ label: "Payment" }]} intro="If you placed an order, use the tracking link we showed you after checkout, or check your account.">
+        <p className="text-center"><Link href="/orders/track" className={btnPrimary}>Track an order</Link></p>
+      </StorePage>
     );
   }
   if (state.payment_method === "cod") redirect("/order/success");
@@ -39,9 +38,9 @@ export default async function PaymentResultPage({ searchParams }: PageProps<"/or
   if (state.payment_status === "paid" || state.payment_status === "refunded" || state.payment_status === "partially_refunded") {
     const order = await trackOrder(receipt.orderNumber, receipt.token);
     return (
-      <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
+      <div className="catalog-skin bg-white"><div className="mx-auto max-w-2xl px-4 pb-20 pt-12 sm:px-6 md:pt-16">
         <p className="text-sm font-medium uppercase tracking-widest text-bronze">Thank you</p>
-        <h1 className="mt-2 font-display text-4xl font-semibold text-espresso" data-testid="payment-headline">Payment received</h1>
+        <h1 className="mt-2 text-[22px] font-medium uppercase tracking-[0.14em] text-ink md:text-[26px]" data-testid="payment-headline">Payment received</h1>
         <p className="mt-3 text-muted">
           {formatBDT(state.total_minor)} was paid{state.last_attempt?.provider === "mock" ? " through the sandbox mock gateway (no real money moved)" : ""}. We&apos;ll confirm your order and dispatch it soon.
         </p>
@@ -52,26 +51,26 @@ export default async function PaymentResultPage({ searchParams }: PageProps<"/or
         </div>
         {order ? <div className="mt-8"><OrderTracking order={order} /></div> : null}
         <Link href="/shop" className="mt-8 inline-block underline">Continue shopping</Link>
-      </div>
+      </div></div>
     );
   }
 
   if (cancelled) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
-        <h1 className="font-display text-4xl font-semibold text-espresso" data-testid="payment-headline">This order has expired</h1>
+      <div className="catalog-skin bg-white"><div className="mx-auto max-w-2xl px-4 pb-20 pt-12 sm:px-6 md:pt-16">
+        <h1 className="text-[22px] font-medium uppercase tracking-[0.14em] text-ink md:text-[26px]" data-testid="payment-headline">This order has expired</h1>
         <p className="mt-3 text-muted">
           Order {state.order_number} was not paid in time, so the items were released back to stock. Nothing was charged. You can order again from the shop.
         </p>
         <Link href="/shop" className="mt-6 inline-block rounded bg-espresso px-5 py-2.5 text-cream">Back to the shop</Link>
-      </div>
+      </div></div>
     );
   }
 
   const pending = attempt === "initiated" || attempt === "redirected";
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
-      <h1 className="font-display text-4xl font-semibold text-espresso" data-testid="payment-headline">
+    <div className="catalog-skin bg-white"><div className="mx-auto max-w-2xl px-4 pb-20 pt-12 sm:px-6 md:pt-16">
+      <h1 className="text-[22px] font-medium uppercase tracking-[0.14em] text-ink md:text-[26px]" data-testid="payment-headline">
         {pending ? "Waiting for your payment" : "Payment not completed"}
       </h1>
       <p className="mt-3 text-muted">
@@ -97,6 +96,6 @@ export default async function PaymentResultPage({ searchParams }: PageProps<"/or
       <p className="mt-6 text-sm text-muted">
         Your tracking link: <Link href={trackUrl} className="underline break-all">{trackUrl}</Link>
       </p>
-    </div>
+    </div></div>
   );
 }

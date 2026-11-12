@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { AccountShell } from "@/components/account/account-shell";
 import { redirect } from "next/navigation";
 import { AddressForm } from "@/components/account/forms";
 import { deleteAddress } from "../actions";
@@ -12,13 +12,12 @@ export default async function AddressesPage() {
   if (!(await getCustomer())) redirect("/account/login?next=/account/addresses");
   const addresses = await getAddresses();
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-      <p className="text-sm"><Link href="/account" className="underline">My account</Link></p>
-      <h1 className="mt-2 font-display text-4xl font-semibold text-espresso">Your addresses</h1>
-      <ul className="mt-8 space-y-6" data-testid="address-list">
+    <AccountShell title="Your addresses" current="/account/addresses" crumbs={[{ label: "Address book" }]} intro="Up to 10 delivery addresses. The default one fills in at checkout.">
+      <div className="max-w-3xl">
+      <ul className="space-y-4" data-testid="address-list">
         {addresses.map((a) => (
           <li key={a.id} className="space-y-2">
-            <details className="group rounded border border-line bg-white">
+            <details className="group rounded-[6px] border border-neutral-200 bg-white">
               <summary className="flex cursor-pointer flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm">
                 <span>
                   <span className="font-medium">{a.label}</span>{a.is_default ? <span className="ml-2 rounded-full bg-sand px-2 py-0.5 text-xs">Default</span> : null}
@@ -37,8 +36,9 @@ export default async function AddressesPage() {
           </li>
         ))}
       </ul>
-      <h2 className="mt-10 font-semibold text-espresso">Add an address</h2>
-      <div className="mt-3"><AddressForm divisions={BD_DIVISIONS} /></div>
-    </div>
+      <h2 className="mt-10 text-[13px] font-semibold uppercase tracking-[0.14em]">Add an address</h2>
+      <div className="mt-4 rounded-[6px] border border-neutral-200 bg-mist p-5"><AddressForm divisions={BD_DIVISIONS} /></div>
+      </div>
+    </AccountShell>
   );
 }

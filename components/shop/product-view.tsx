@@ -46,6 +46,7 @@ export function ProductView({
   artKind,
   shares,
   store,
+  titleAction,
   children,
 }: {
   title: string;
@@ -60,6 +61,8 @@ export function ProductView({
   artKind: GarmentKind | null;
   shares: ShareLink[];
   store: StoreInfo;
+  /** Control beside the title (the wishlist heart). */
+  titleAction?: ReactNode;
   /** Extra blocks under the buttons (try-on, details). */
   children?: ReactNode;
 }) {
@@ -87,7 +90,10 @@ export function ProductView({
         <Gallery key={color} title={title} brand={brand} slides={slides} hex={hex} />
       </div>
       <div className="md:pt-1">
-        <h1 className="text-[26px] font-medium leading-tight text-ink md:text-[28px]">{title}</h1>
+        <div className="flex items-start justify-between gap-4">
+          <h1 className="text-[26px] font-medium leading-tight text-ink md:text-[28px]">{title}</h1>
+          {titleAction}
+        </div>
         {code ? (
           <p className="mt-1 text-[16px] text-neutral-600" data-testid="product-code">
             Product Code: {code}

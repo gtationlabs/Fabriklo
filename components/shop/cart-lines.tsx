@@ -36,7 +36,7 @@ export function CartLines({ cart }: { cart: Cart }) {
       <ul className="divide-y divide-line border-y border-line">
         {cart.items.map((item) => (
           <li key={item.variant_id} className="flex flex-wrap items-center gap-4 py-5" data-testid="cart-line">
-            <span className="h-16 w-14 shrink-0 rounded-sm" style={{ backgroundColor: item.color_hex ?? "#ccc" }} aria-hidden />
+            <span className="h-24 w-20 shrink-0 rounded-[4px] border border-neutral-200" style={{ backgroundColor: item.color_hex ?? "#ccc" }} aria-hidden />
             <div className="min-w-0 flex-1">
               <Link href={`/product/${item.slug}`} className="font-medium text-espresso hover:underline">
                 {item.title}

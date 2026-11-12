@@ -7,6 +7,7 @@ import { ProductCard } from "@/components/shop/product-card";
 import { CarouselItem, ProductCarousel } from "@/components/shop/product-carousel";
 import { ProductView, type ViewPhoto } from "@/components/shop/product-view";
 import { RecentlyViewed } from "@/components/shop/recently-viewed";
+import { WishlistButton } from "@/components/shop/wishlist";
 import { garmentKind } from "@/components/shop/garment-art";
 import { TryonPanel } from "@/components/tryon/tryon-panel";
 import { getCustomer } from "@/lib/account/session";
@@ -86,6 +87,7 @@ export default async function ProductPage({ params }: PageProps<"/product/[slug]
           demoArt={demoArt}
           artKind={artKind}
           shares={shareLinks(url, product.title)}
+          titleAction={<WishlistButton product={detailToCard(product)} size="lg" className="border border-neutral-200 shadow-none" />}
           store={{ name: identity.name, address: contact?.address ?? "", hours: contact?.hours ?? "", phone: contact?.phone ?? null }}
         >
           {product.is_demo ? <DemoBadge className="mt-6" /> : null}

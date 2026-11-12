@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { OrderTracking } from "@/components/orders/order-tracking";
+import { AccountShell } from "@/components/account/account-shell";
 import { getCustomer } from "@/lib/account/session";
 import { trackOrder } from "@/lib/checkout/service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -21,10 +22,11 @@ export default async function AccountOrderPage({ params }: PageProps<"/account/o
   const tracked = typeof token === "string" ? await trackOrder(number, token) : null;
   if (!tracked) notFound();
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
-      <p className="text-sm"><Link href="/account" className="underline">My account</Link></p>
-      <h1 className="mt-2 font-display text-3xl font-semibold text-espresso">Order {number}</h1>
-      <div className="mt-6"><OrderTracking order={tracked} /></div>
-    </div>
+    <AccountShell title={`Order ${number}`} current="/account" crumbs={[{ label: `Order ${number}` }]}>
+      <div className="max-w-3xl">
+        <OrderTracking order={tracked} />
+        <Link href="/account" className="mt-6 inline-block text-[13px] underline underline-offset-4">Back to your orders</Link>
+      </div>
+    </AccountShell>
   );
 }

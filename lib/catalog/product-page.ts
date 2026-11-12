@@ -104,7 +104,7 @@ export function parseRecent(raw: string | null): ProductCard[] {
   return data.filter(isCard).slice(0, RECENT_MAX);
 }
 
-function isCard(x: unknown): x is ProductCard {
+export function isCard(x: unknown): x is ProductCard {
   if (!x || typeof x !== "object") return false;
   const c = x as Record<string, unknown>;
   return (
