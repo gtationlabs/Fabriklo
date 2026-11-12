@@ -5,6 +5,25 @@ const district = z.string().refine((d) => BD_DISTRICTS.includes(d), "Choose your
 
 export const quoteRequestSchema = z.object({ district: district.nullable().optional() });
 
+export const leadRequestSchema = z.object({
+  name: z.string().trim().max(120).default(""),
+  phone: z.string().trim().max(20).transform((v, ctx) => {
+    const p = normalizeBdPhone(v);
+    if (!p) {
+      ctx.addIssue({ code: "custom", message: "Enter a Bangladesh mobile number" });
+      return z.NEVER;
+    }
+    return p;
+  }),
+  email: z.string().trim().max(254).optional(),
+  district: z.string().max(60).optional(),
+  addressLine: z.string().trim().max(300).optional(),
+});
+
+export const shippingMethodRequestSchema = z.object({ code: z.string().regex(/^[a-z0-9_-]{2,40}$/) });
+
+export type ShippingOption = { code: string; name: string; description: string; fee_adjust_minor: number; min_days: number | null; max_days: number | null; cod_allowed: boolean };
+
 /** Shared by the checkout form (client) and the order API (server). The DB validates again. */
 export const placeOrderSchema = z.object({
   idempotencyKey: z.string().regex(/^[A-Za-z0-9_-]{16,120}$/),
@@ -67,6 +86,8 @@ export type Quote = {
   shipping_minor: number | null;
   total_minor: number | null;
   zone: { code: string; name: string; min_days: number; max_days: number } | null;
+  shipping_method?: string | null;
+  shipping_methods?: ShippingOption[];
   district_known: boolean;
   cod_available: boolean;
   cod_max_order_minor: number | null;

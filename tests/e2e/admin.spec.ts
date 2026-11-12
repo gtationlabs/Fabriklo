@@ -55,7 +55,7 @@ test.describe("staff vertical slice", () => {
     const secret = (await page.getByTestId("totp-secret").textContent())!.trim();
     await page.getByLabel("Authentication code").fill(totp(secret));
     await page.getByRole("button", { name: "Verify" }).click();
-    await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
     await expect(page.getByText("Active products")).toBeVisible();
 
     // Create a draft product
@@ -131,7 +131,7 @@ test.describe("staff vertical slice", () => {
     const secret = (await page.getByTestId("totp-secret").textContent())!.trim();
     await page.getByLabel("Authentication code").fill(totp(secret));
     await page.getByRole("button", { name: "Verify" }).click();
-    await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
     const nav = page.getByRole("navigation", { name: "Admin" });
     await expect(nav.getByRole("link", { name: "Products" })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Inventory" })).toHaveCount(0);

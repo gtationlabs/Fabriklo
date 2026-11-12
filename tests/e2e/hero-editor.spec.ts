@@ -19,7 +19,7 @@ async function signInWithMfa(page: Page, email: string, password: string) {
     new OTPAuth.TOTP({ secret: OTPAuth.Secret.fromBase32(secret), digits: 6, period: 30 }).generate(),
   );
   await page.getByRole("button", { name: "Verify" }).click();
-  await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
 }
 
 test("content editor drafts, previews, publishes and rolls back the store tour", async ({ page, browser }) => {

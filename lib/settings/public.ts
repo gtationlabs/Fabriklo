@@ -47,3 +47,31 @@ export const getStoreContact = cache(async (): Promise<StoreContact | null> => {
   }
   return null;
 });
+
+export type StoreSocial = { facebook: string; instagram: string; tiktok: string; youtube: string; whatsapp: string };
+
+/** Social profile links (Admin → Settings → Social profiles); empty strings are hidden. */
+export const getStoreSocial = cache(async (): Promise<StoreSocial> => {
+  const empty: StoreSocial = { facebook: "", instagram: "", tiktok: "", youtube: "", whatsapp: "" };
+  try {
+    const { data } = await createSupabasePublicClient().from("site_settings").select("value").eq("key", "store.social").maybeSingle();
+    const v = (data?.value ?? {}) as Partial<StoreSocial>;
+    const ok = (s: unknown, re: RegExp) => (typeof s === "string" && re.test(s) ? s : "");
+    return {
+      facebook: ok(v.facebook, /^https:\/\//), instagram: ok(v.instagram, /^https:\/\//), tiktok: ok(v.tiktok, /^https:\/\//),
+      youtube: ok(v.youtube, /^https:\/\//), whatsapp: ok(v.whatsapp, /^\+8801[3-9][0-9]{8}$/),
+    };
+  } catch {
+    return empty;
+  }
+});
+
+/** Active Meta pixel ids from Admin → Settings → Meta Pixels (public ids, not secrets). */
+export const getMetaPixelIds = cache(async (): Promise<string[]> => {
+  try {
+    const { data } = await createSupabasePublicClient().rpc("active_meta_pixel_ids");
+    return Array.isArray(data) ? (data as string[]).filter((id) => /^[0-9]{8,20}$/.test(id)) : [];
+  } catch {
+    return [];
+  }
+});

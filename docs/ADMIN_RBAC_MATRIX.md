@@ -20,6 +20,7 @@ Source of truth: `public.role_permissions` (seeded in `supabase/migrations/20261
 | customers.read | ✓ | ✓ | — | — | ✓ | ✓ | — | — | — |
 | customers.manage | ✓ | ✓ | — | — | — | — | — | — | — |
 | cms.edit / cms.publish | ✓ | ✓ | — | — | — | — | — | ✓ | — |
+| reviews.moderate | ✓ | ✓ | — | — | — | ✓ | ✓ | ✓ | — |
 | theme.publish | ✓ | ✓ (permission) | — | — | — | — | — | — | — |
 | marketing.manage | ✓ | ✓ | — | — | — | — | ✓ | — | — |
 | marketing.read | ✓ | ✓ | — | — | — | — | ✓ | — | ✓ (view only) |
@@ -38,3 +39,5 @@ Notes
 - `orders.refund` is deliberately **not** given to `order_manager` by default; the owner grants it explicitly (spec: "permission").
 - Hidden menus are not authorization. Each page calls `requireStaff(permission)`, each action calls `checkStaff(permission)`, and each table/RPC checks `private.has_permission()`.
 - Role changes are audited (`audit_events`), staff cannot edit their own membership, and suspensions are effective immediately (no cached claims). Forced session revocation on role change will be added with the staff-management UI (Auth admin `signOut(user, 'global')`).
+
+`reviews.moderate` (migration 20261112000200) is also granted to `store_manager` when that role exists (PR #10).

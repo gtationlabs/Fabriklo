@@ -58,13 +58,15 @@ export function TransitionForm({
 export function ShipmentForm({
   orderId,
   shipment,
+  defaultCourier,
 }: {
   orderId: string;
   shipment: { courier: string; courier_name: string | null; tracking_number: string | null; tracking_url: string | null } | null;
+  defaultCourier?: string;
 }) {
   const [state, action, pending] = useActionState(saveShipment, idle);
   const v = state.values ?? {
-    courier: shipment?.courier ?? "manual",
+    courier: shipment?.courier ?? defaultCourier ?? "manual",
     courierName: shipment?.courier_name ?? "",
     trackingNumber: shipment?.tracking_number ?? "",
     trackingUrl: shipment?.tracking_url ?? "",

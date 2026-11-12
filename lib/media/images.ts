@@ -47,3 +47,17 @@ export const PRODUCT_PHOTO_MESSAGES: Record<ProductPhotoError, string> = {
   too_small: "That photo is too small. Use one at least 400 pixels on each side.",
   bad_aspect: "That photo is an unusual shape (more than 3:1). Crop it first.",
 };
+
+/** Staff avatar: square 256 px WebP, metadata stripped. */
+export async function prepareAvatar(input: Uint8Array): Promise<{ ok: true; bytes: Uint8Array } | { ok: false; code: ProductPhotoError }> {
+  if (input.length > PRODUCT_PHOTO_MAX_BYTES) return { ok: false, code: "too_large" };
+  if (!sniffImageType(input)) return { ok: false, code: "unsupported_type" };
+  try {
+    const meta = await sharp(Buffer.from(input), { limitInputPixels: 50_000_000 }).metadata();
+    if (Math.min(meta.width ?? 0, meta.height ?? 0) < 64) return { ok: false, code: "too_small" };
+    const out = await sharp(Buffer.from(input), { limitInputPixels: 50_000_000 }).rotate().resize(256, 256, { fit: "cover" }).webp({ quality: 82 }).toBuffer();
+    return { ok: true, bytes: new Uint8Array(out) };
+  } catch {
+    return { ok: false, code: "undecodable" };
+  }
+}

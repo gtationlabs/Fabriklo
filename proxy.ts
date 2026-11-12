@@ -21,7 +21,9 @@ export async function proxy(request: NextRequest) {
     isDev: process.env.NODE_ENV !== "production",
     supabaseOrigin: originOf(process.env.NEXT_PUBLIC_SUPABASE_URL),
     ga4: Boolean(process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID),
-    pixel: Boolean(process.env.NEXT_PUBLIC_META_PIXEL_ID),
+    // Pixels can also be added in Admin → Settings → Meta Pixels, so the shop
+    // allows Meta's hosts; the admin keeps the strict policy.
+    pixel: Boolean(process.env.NEXT_PUBLIC_META_PIXEL_ID) || !request.nextUrl.pathname.startsWith("/admin"),
     turnstile: Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY),
     sentryOrigin: sentryOriginFromDsn(process.env.NEXT_PUBLIC_SENTRY_DSN),
   });

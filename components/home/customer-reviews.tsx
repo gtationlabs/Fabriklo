@@ -195,9 +195,11 @@ export function CustomerReviews({ reviews, sample }: { reviews: Testimonial[]; s
                 </div>
               ))}
             </dl>
-            <p className="mt-4 text-sm text-charcoal">
-              <strong className="font-semibold">{Math.round(summary.trueToSize * 100)}%</strong> say it fits true to size.
-            </p>
+            {reviews.some((r) => r.fit) ? (
+              <p className="mt-4 text-sm text-charcoal">
+                <strong className="font-semibold">{Math.round(summary.trueToSize * 100)}%</strong> say it fits true to size.
+              </p>
+            ) : null}
 
             {mode === "deck" ? (
               <div className="mt-8 flex items-center gap-3">
@@ -248,7 +250,7 @@ export function CustomerReviews({ reviews, sample }: { reviews: Testimonial[]; s
                   <span className="customer-reviews__hole" aria-hidden />
                   <div className="flex items-center justify-between gap-3">
                     <Stars rating={r.rating} className="h-4 w-4" />
-                    <span className="text-[0.7rem] uppercase tracking-[0.2em] text-muted">{FIT_LABEL[r.fit]}</span>
+                    {r.fit ? <span className="text-[0.7rem] uppercase tracking-[0.2em] text-muted">{FIT_LABEL[r.fit]}</span> : null}
                   </div>
                   <h3 className="mt-4 font-display text-2xl font-semibold leading-snug text-espresso">“{r.title}”</h3>
                   <p className="mt-3 text-[0.95rem] leading-relaxed text-charcoal">{r.body}</p>
@@ -260,7 +262,7 @@ export function CustomerReviews({ reviews, sample }: { reviews: Testimonial[]; s
                     <p className="text-right text-muted">
                       {r.product}
                       <br />
-                      <span className="tabular-nums">Size {r.size}</span>
+                      {r.size ? <span className="tabular-nums">Size {r.size}</span> : null}
                     </p>
                   </footer>
                 </article>

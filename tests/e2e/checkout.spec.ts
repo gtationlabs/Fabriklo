@@ -51,7 +51,7 @@ async function signInWithMfa(page: Page, email: string, password: string) {
   const code = new OTPAuth.TOTP({ secret: OTPAuth.Secret.fromBase32(secret), digits: 6, period: 30 }).generate();
   await page.getByLabel("Authentication code").fill(code);
   await page.getByRole("button", { name: "Verify" }).click();
-  await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
 }
 
 async function transition(page: Page, title: string, to: string, reason?: string) {
