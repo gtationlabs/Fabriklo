@@ -13,12 +13,12 @@ export default async function NewsletterUnsubscribePage({ searchParams }: PagePr
     ok = Boolean((data as { ok?: boolean } | null)?.ok);
   }
   return (
-    <div className="mx-auto max-w-xl px-4 py-16 text-center sm:px-6">
-      <h1 className="font-display text-4xl font-semibold text-espresso">{ok ? "You're unsubscribed" : "That link didn't work"}</h1>
+    <div className="catalog-skin bg-white"><div className="mx-auto max-w-xl px-4 pb-20 pt-16 text-center sm:px-6">
+      <h1 className="text-[22px] font-medium uppercase tracking-[0.14em] text-ink md:text-[26px]">{ok ? "You're unsubscribed" : "That link didn't work"}</h1>
       <p className="mt-3 text-muted" data-testid="newsletter-unsubscribe-result">
         {ok ? "You won't receive marketing emails from us. Order updates for purchases you make are still sent." : "The unsubscribe link is invalid. Use the link at the bottom of any of our emails."}
       </p>
       <Link href="/shop" className="mt-8 inline-block rounded bg-espresso px-5 py-3 text-sm font-medium text-cream">Back to the store</Link>
-    </div>
+    </div></div>
   );
 }

@@ -88,6 +88,8 @@ test.describe("storefront", () => {
 
   test("product page: breadcrumb, code, gallery, sizes, share, also-like and recently viewed", async ({ page }) => {
     await page.goto("/product/linen-blend-shirt");
+    // The visit is recorded after hydration; wait for it before moving on.
+    await page.waitForFunction(() => window.localStorage.getItem("fabriklo.recently-viewed.v1")?.includes("linen-blend-shirt"));
     await page.goto("/product/oxford-button-down-shirt");
     const crumbs = page.getByRole("navigation", { name: "Breadcrumb" });
     await expect(crumbs.getByRole("link", { name: "Men" })).toHaveAttribute("href", "/men");

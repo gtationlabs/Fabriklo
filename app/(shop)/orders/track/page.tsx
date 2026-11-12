@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import Link from "next/link";
+import { StorePage, btnPrimary } from "@/components/shop/store-page";
 import { OrderTracking } from "@/components/orders/order-tracking";
 import { trackOrder } from "@/lib/checkout/service";
 import { enforceRateLimit } from "@/lib/security/rate-limit";
@@ -24,17 +26,13 @@ export default async function TrackOrderPage({ searchParams }: PageProps<"/order
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
-      <h1 className="font-display text-4xl font-semibold text-espresso">Track your order</h1>
-      <p className="mt-2 text-sm text-muted">
-        Use the private link from your order confirmation, or enter the order number and tracking code from it.
-      </p>
+    <StorePage title="Track your order" width="text" crumbs={[{ label: "Track an order" }]} intro="Use the private link from your order confirmation, or enter the order number and tracking code from it.">
       {result ? (
-        <div className="mt-8">
+        <div>
           <OrderTracking order={result} />
         </div>
       ) : (
-        <form method="get" className="mt-8 space-y-4 rounded border border-line bg-cream p-6">
+        <form method="get" className="mx-auto max-w-md space-y-4 rounded-[6px] border border-neutral-200 bg-mist p-6">
           {message ? (
             <p role="alert" className="rounded border border-danger/30 bg-danger/5 p-3 text-sm text-danger">{message}</p>
           ) : null}
@@ -48,9 +46,10 @@ export default async function TrackOrderPage({ searchParams }: PageProps<"/order
             <input id="token" name="token" defaultValue="" autoComplete="off" required
               className="mt-1 w-full rounded border border-line bg-white px-3 py-2.5 font-mono text-sm" />
           </div>
-          <button type="submit" className="rounded bg-espresso px-5 py-2.5 text-cream">Find order</button>
+          <button type="submit" className={`${btnPrimary} w-full`}>Find order</button>
+          <p className="text-center text-[12px] text-neutral-600">Signed in? Your orders are also in <Link href="/account" className="underline">My account</Link>.</p>
         </form>
       )}
-    </div>
+    </StorePage>
   );
 }

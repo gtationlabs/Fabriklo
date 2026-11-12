@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
+import { Panel, StorePage } from "@/components/shop/store-page";
 import { ForgotForm } from "@/components/account/auth-forms";
 
 export const metadata: Metadata = { title: "Reset your password", robots: { index: false } };
 
 export default function ForgotPage() {
   return (
-    <div className="mx-auto max-w-md px-4 py-12 sm:px-6">
-      <h1 className="font-display text-4xl font-semibold text-espresso">Reset your password</h1>
-      <p className="mt-2 text-sm text-muted">We&apos;ll email you a link to choose a new password.</p>
-      <div className="mt-8"><ForgotForm /></div>
-    </div>
+    <StorePage title="Reset your password" width="narrow" crumbs={[{ href: "/account/login", label: "Sign in" }, { label: "Reset password" }]} intro="We'll email you a link to choose a new password.">
+      <Panel><ForgotForm /></Panel>
+    </StorePage>
   );
 }

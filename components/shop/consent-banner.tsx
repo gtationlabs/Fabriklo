@@ -46,10 +46,10 @@ export function ConsentBanner({ hasTags }: { hasTags: boolean }) {
     setOpen(false);
   };
   return (
-    <section ref={ref} role="dialog" aria-labelledby="consent-h" aria-live="polite" data-testid="consent-banner" className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-paper p-4 shadow-lg sm:p-5">
+    <section ref={ref} role="dialog" aria-labelledby="consent-h" aria-live="polite" data-testid="consent-banner" className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white p-4 font-catalog text-ink shadow-lg sm:p-5">
       <div className="mx-auto flex max-w-7xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="text-sm">
-          <h2 id="consent-h" className="font-semibold text-espresso">Cookies</h2>
+          <h2 id="consent-h" className="font-semibold">Cookies</h2>
           <p className="text-muted">
             Essential cookies keep your cart and sign-in working. {hasTags ? "With your permission we also measure visits (analytics) and show relevant offers (marketing)." : "Analytics and marketing cookies are not switched on for this store yet, but you can set your preference now."}
           </p>
@@ -62,12 +62,12 @@ export function ConsentBanner({ hasTags }: { hasTags: boolean }) {
         </div>
         <div className="flex shrink-0 flex-wrap gap-2">
           {choosing ? (
-            <button type="button" onClick={() => save({ analytics, marketing })} className="rounded bg-espresso px-4 py-2 text-sm font-medium text-cream">Save choices</button>
+            <button type="button" onClick={() => save({ analytics, marketing })} className="rounded-[4px] bg-ink px-4 py-2 text-sm font-medium text-white">Save choices</button>
           ) : (
             <>
-              <button type="button" onClick={() => save({ analytics: false, marketing: false })} className="rounded border border-espresso px-4 py-2 text-sm font-medium">Essential only</button>
-              <button type="button" onClick={() => setChoosing(true)} className="rounded border border-line px-4 py-2 text-sm">Choose</button>
-              <button type="button" onClick={() => save({ analytics: true, marketing: true })} className="rounded bg-espresso px-4 py-2 text-sm font-medium text-cream">Accept all</button>
+              <button type="button" onClick={() => save({ analytics: false, marketing: false })} className="rounded-[4px] border border-ink px-4 py-2 text-sm font-medium">Essential only</button>
+              <button type="button" onClick={() => setChoosing(true)} className="rounded-[4px] border border-neutral-300 px-4 py-2 text-sm">Choose</button>
+              <button type="button" onClick={() => save({ analytics: true, marketing: true })} className="rounded-[4px] bg-ink px-4 py-2 text-sm font-medium text-white">Accept all</button>
             </>
           )}
         </div>

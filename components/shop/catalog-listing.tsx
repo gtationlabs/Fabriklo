@@ -90,7 +90,7 @@ export async function CatalogListing({
   );
 
   return (
-    <div className="min-h-[60vh] bg-mist font-catalog text-ink" data-testid="catalog-listing">
+    <div className="min-h-[60vh] bg-mist pb-24 font-catalog text-ink" data-testid="catalog-listing">
       <DropdownDismiss />
       <h1 className="sr-only">{title}</h1>
       {description ? <p className="sr-only">{description}</p> : null}

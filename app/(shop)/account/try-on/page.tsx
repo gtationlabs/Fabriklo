@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { AccountShell } from "@/components/account/account-shell";
 import { getCustomer } from "@/lib/account/session";
 import { listMyJobs } from "@/lib/tryon/service";
 import { tryonMessageFor } from "@/lib/tryon/types";
@@ -14,16 +15,14 @@ export default async function TryonHistoryPage() {
   if (!customer) redirect("/account/login?next=/account/try-on");
   const jobs = (await listMyJobs()) as (Awaited<ReturnType<typeof listMyJobs>>[number] & { product?: { title: string; slug: string } })[];
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-      <p className="text-sm"><Link href="/account" className="underline">My account</Link></p>
-      <h1 className="mt-2 font-display text-4xl font-semibold text-espresso">My try-ons</h1>
-      <p className="mt-2 text-sm text-muted">Photos and results are private to you and are deleted automatically when they expire. You can delete any of them now.</p>
+    <AccountShell title="My try-ons" current="/account/try-on" crumbs={[{ label: "Try-on photos" }]} intro="Photos and results are private to you and are deleted automatically when they expire. You can delete any of them now.">
+      <div className="max-w-3xl">
       {jobs.length === 0 ? (
-        <p className="mt-6 rounded border border-dashed border-line p-6 text-sm text-muted">No try-ons yet. Look for “Try it on with your photo” on supported products.</p>
+        <p className="rounded-[6px] border border-dashed border-neutral-300 bg-mist p-6 text-sm text-muted">No try-ons yet. Look for “Try it on with your photo” on supported products, or read <Link href="/try-on" className="underline">how AI try-on works</Link>.</p>
       ) : (
-        <ul className="mt-6 space-y-4" data-testid="tryon-history">
+        <ul className="space-y-4" data-testid="tryon-history">
           {jobs.map((j) => (
-            <li key={j.id} className="flex flex-wrap items-start gap-4 rounded border border-line bg-white p-4 text-sm">
+            <li key={j.id} className="flex flex-wrap items-start gap-4 rounded-[6px] border border-neutral-200 bg-white p-4 text-sm">
               {j.output_url ? (
                 // eslint-disable-next-line @next/next/no-img-element -- short-lived signed URL
                 <img src={j.output_url} alt="" className="h-28 w-20 rounded object-cover" />
@@ -43,6 +42,7 @@ export default async function TryonHistoryPage() {
           ))}
         </ul>
       )}
-    </div>
+      </div>
+    </AccountShell>
   );
 }

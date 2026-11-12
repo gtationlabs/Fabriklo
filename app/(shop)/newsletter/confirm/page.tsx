@@ -13,12 +13,12 @@ export default async function NewsletterConfirmPage({ searchParams }: PageProps<
     ok = Boolean((data as { ok?: boolean } | null)?.ok);
   }
   return (
-    <div className="mx-auto max-w-xl px-4 py-16 text-center sm:px-6">
-      <h1 className="font-display text-4xl font-semibold text-espresso">{ok ? "You're subscribed" : "That link didn't work"}</h1>
+    <div className="catalog-skin bg-white"><div className="mx-auto max-w-xl px-4 pb-20 pt-16 text-center sm:px-6">
+      <h1 className="text-[22px] font-medium uppercase tracking-[0.14em] text-ink md:text-[26px]">{ok ? "You're subscribed" : "That link didn't work"}</h1>
       <p className="mt-3 text-muted" data-testid="newsletter-confirm-result">
         {ok ? "Thanks for confirming. You can unsubscribe from any email with one click." : "The confirmation link is invalid, already used, or has expired. Subscribe again from the footer to get a new one."}
       </p>
       <Link href="/shop" className="mt-8 inline-block rounded bg-espresso px-5 py-3 text-sm font-medium text-cream">Continue shopping</Link>
-    </div>
+    </div></div>
   );
 }

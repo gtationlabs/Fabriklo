@@ -69,14 +69,18 @@ export default async function HomePage() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/assets/store/store-05-1280.webp" alt="Fitting rooms in the store" loading="lazy" className="h-full w-full object-cover" />
           <div className="p-8">
-            <p className="text-xs uppercase tracking-[0.25em] text-cream/70">Coming soon</p>
+            <p className="text-xs uppercase tracking-[0.25em] text-cream/70">AI try-on</p>
             <h2 id="tryon-heading" className="mt-2 font-display text-3xl font-semibold">Try it on with your own photo</h2>
             <p className="mt-3 text-cream/80">
               Preview selected pieces on a photo you upload. It is a visual guide only, not a fit guarantee, and your photo stays private.
             </p>
+            <Link href="/try-on" className="mt-6 inline-block rounded border border-cream/60 px-5 py-2.5 text-sm font-medium hover:bg-cream hover:text-espresso">
+              How it works
+            </Link>
           </div>
         </div>
       </section>
+      <div aria-hidden className="h-24" />
     </>
   );
 }

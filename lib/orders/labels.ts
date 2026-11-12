@@ -70,3 +70,20 @@ export const NEXT_STATES: Record<string, Record<string, string[]>> = {
 
 /** Transitions that require a written reason (enforced again in the database). */
 export const NEEDS_REASON = new Set(["cancelled", "rejected_with_reason", "blocked_by_policy", "delivery_failed", "needs_review"]);
+
+/** The four customer-facing milestones shown as a progress bar on tracking pages. */
+export const ORDER_STEPS = ["Placed", "Confirmed", "Shipped", "Delivered"] as const;
+
+/**
+ * How far along the milestone bar an order is: index of the last reached
+ * step (0–3), or null when the order left the happy path (cancelled,
+ * returned, failed delivery), so the bar is replaced by the status text.
+ */
+export function orderStep(o: { fulfillment_status: string; shipment_status: string }): number | null {
+  if (o.fulfillment_status === "cancelled") return null;
+  if (["delivery_failed", "rto", "returned"].includes(o.shipment_status)) return null;
+  if (o.shipment_status === "delivered") return 3;
+  if (o.shipment_status !== "not_shipped" && o.shipment_status !== "ready_for_pickup") return 2;
+  if (o.fulfillment_status === "unfulfilled") return 0;
+  return 1;
+}

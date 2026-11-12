@@ -41,14 +41,17 @@ export function Blocks({ blocks }: { blocks: Block[] }) {
             );
           case "faq":
             return (
-              <dl key={i} className="divide-y divide-line rounded border border-line">
+              <div key={i} className="divide-y divide-line rounded border border-line bg-white">
                 {b.items.map((it, n) => (
-                  <div key={n} className="p-4">
-                    <dt className="font-semibold text-espresso">{it.q}</dt>
-                    <dd className="mt-1 text-muted"><InlineText text={it.a} /></dd>
-                  </div>
+                  <details key={n} className="group/faq px-4 [&_summary::-webkit-details-marker]:hidden">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-4 font-semibold text-espresso">
+                      {it.q}
+                      <span aria-hidden className="text-xl font-light leading-none transition group-open/faq:rotate-45">+</span>
+                    </summary>
+                    <p className="pb-4 text-muted"><InlineText text={it.a} /></p>
+                  </details>
                 ))}
-              </dl>
+              </div>
             );
           case "callout":
             return (

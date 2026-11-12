@@ -8,6 +8,7 @@ import { formatBDTCode } from "@/lib/money";
 import { discountLabel } from "@/lib/catalog/product-page";
 import { DemoBadge } from "@/components/ui/demo-badge";
 import { ProductArt } from "./product-art";
+import { WishlistButton } from "./wishlist";
 
 /** Shopping bag with a plus: the quick-add mark in the corner of each picture. */
 function BagPlus({ className = "" }: { className?: string }) {
@@ -52,8 +53,9 @@ export function ProductCard({ product, href }: { product: Card; href?: string })
           )}
         </Link>
         {onSale ? (
-          <span className="absolute right-3 top-3 rounded-[3px] bg-danger px-2.5 py-0.5 text-[11px] font-medium text-white">Sale</span>
+          <span className="absolute left-3 top-3 rounded-[3px] bg-danger px-2.5 py-0.5 text-[11px] font-medium text-white">Sale</span>
         ) : null}
+        <WishlistButton product={product} className="absolute right-3 top-3" />
         <div className="absolute inset-x-3 bottom-3 flex gap-2 md:inset-x-4 md:bottom-4">
           <Link
             href={to}

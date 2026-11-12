@@ -367,3 +367,34 @@ body {
   left: max(0px, calc(50% - 15rem));
   width: min(30rem, 100%);
 }
+
+/* ---------------------------------------------------------------------------
+   Catalogue skin for service pages (cart, checkout, account, help, orders).
+   Re-points the warm tokens at the near-black / cool-grey catalogue palette
+   used by the listing and product pages, so shared form components pick it
+   up without a rewrite. Home page sections keep the warm palette.
+   --------------------------------------------------------------------------- */
+.catalog-skin {
+  --color-espresso: var(--color-ink);
+  --color-charcoal: #262626;
+  --color-bronze: var(--color-ink);
+  --color-bronze-strong: var(--color-ink);
+  --color-cream: var(--color-mist);
+  --color-sand: #e7e7ea;
+  --color-line: #e2e2e5;
+  --color-muted: #5c5c5c;
+  --font-display: var(--font-dm-sans), var(--font-body);
+  --ui-radius-sm: 4px;
+  --ui-radius-md: 4px;
+  --ui-radius-lg: 6px;
+  --ui-radius-xl: 6px;
+  font-family: var(--font-dm-sans), var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  color: var(--color-ink);
+}
+/* Dark buttons keep white text (cream would turn grey under the skin). */
+.catalog-skin .text-cream {
+  color: #fff;
+}
+.catalog-skin :focus-visible {
+  outline-color: var(--color-ink);
+}
