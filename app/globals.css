@@ -398,3 +398,14 @@ body {
 .catalog-skin :focus-visible {
   outline-color: var(--color-ink);
 }
+
+/* Admin dashboard charts: validated series colours + recessive chart chrome. */
+.dash-root {
+  --viz-1: #b06f1c;
+  --viz-2: #2a78d6;
+  --viz-grid: #ececee;
+  --viz-crosshair: #a3a3a8;
+  --viz-surface: #ffffff;
+  --viz-muted: #cfc8be;
+  --viz-track: #f1ece4;
+}
