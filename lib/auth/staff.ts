@@ -11,6 +11,8 @@ export type StaffContext = {
   displayName: string;
   permissions: Permission[];
   aal: "aal1" | "aal2";
+  /** Whether staff sign-in currently requires an authenticator code (Admin → Settings → Security). */
+  mfaRequired: boolean;
 };
 
 export type StaffState =
@@ -26,6 +28,8 @@ type DbStaffContext = {
   display_name: string | null;
   permissions: string[];
   aal: string;
+  /** Missing on a database without migration 20261112000300: MFA stays required there. */
+  mfa_required?: boolean;
 };
 
 /**
@@ -44,7 +48,9 @@ export const getStaffState = cache(async (): Promise<StaffState> => {
   let ctx = data as DbStaffContext;
   if (!ctx.is_staff) return { kind: "not_staff", email };
 
-  if (claims.aal !== "aal2") {
+  const aal = claims.aal === "aal2" ? "aal2" : "aal1";
+  const mfaRequired = ctx.mfa_required !== false;
+  if (mfaRequired && aal !== "aal2") {
     const { data: factors } = await supabase.auth.mfa.listFactors();
     const hasVerifiedFactor = (factors?.totp ?? []).some((f) => f.status === "verified");
     return { kind: "needs_mfa", email, hasVerifiedFactor };
@@ -68,7 +74,8 @@ export const getStaffState = cache(async (): Promise<StaffState> => {
       role: ctx.role ?? "",
       displayName: ctx.display_name || email || "Staff",
       permissions: ctx.permissions as Permission[],
-      aal: "aal2",
+      aal,
+      mfaRequired,
     },
   };
 });
@@ -90,7 +97,7 @@ export async function checkStaff(
   permission: Permission,
 ): Promise<{ ok: true; staff: StaffContext } | { ok: false; message: string }> {
   const state = await getStaffState();
-  if (state.kind !== "ok") return { ok: false, message: "Your session has expired. Sign in again with MFA." };
+  if (state.kind !== "ok") return { ok: false, message: "Your session has expired. Sign in again." };
   if (!state.staff.permissions.includes(permission)) {
     return { ok: false, message: "You do not have permission to do that." };
   }

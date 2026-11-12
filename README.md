@@ -24,7 +24,7 @@ npm run dev                 # http://localhost:3000
 npm run staff:create -- you@example.com super_admin
 ```
 
-Sign in at <http://localhost:3000/admin/login>; you'll enrol an authenticator app (TOTP) on first login. Roles: `super_admin, admin, store_manager, catalog_manager, inventory_manager, order_manager, support_agent, marketing_manager, content_editor, analyst`.
+Sign in at <http://localhost:3000/admin/login> with email and password. Two-step sign-in (an authenticator app code) is **off by default**; a super admin turns it on in Admin → Settings → Security (see below). Roles: `super_admin, admin, store_manager, catalog_manager, inventory_manager, order_manager, support_agent, marketing_manager, content_editor, analyst`.
 
 ### Demo accounts for testing (DEV / SANDBOX ONLY)
 
@@ -47,7 +47,9 @@ Password for every account: **`Fabriklo-Demo-2026!`** (override with `DEMO_USERS
 | Staff | `staff@demo.fabriklo.local` | `support_agent` | `/admin/login` | Read-only orders, customers and products |
 | Customer | `customer@demo.fabriklo.local` | customer | `/account/login` | Storefront account with a saved Dhaka address; no admin access |
 
-**MFA:** the admin still requires a second factor for every staff role (enforced in the database, not just the UI), so the script enrols an authenticator for each staff account itself and stores the secrets in the git-ignored `.demo-users.local.json`. After entering the password, run `npm run demo:otp -- admin` and type the code, or add the printed setup key to Google Authenticator once. Re-running the seed keeps existing secrets and resets passwords, so it is safe to run again.
+**MFA (authenticator codes):** off by default, so every staff account signs in with email and password only. A super admin can switch it on or off in **Admin → Settings → Security → Two-step sign-in for staff**; the setting lives in the database (`private.security_settings.staff_mfa_required`, migration `20261112000300_optional_staff_mfa.sql`) and is enforced by RLS as well as the UI, so when it is on every staff role needs an `aal2` session again. The seed script still enrols an authenticator for each staff account and stores the secrets in the git-ignored `.demo-users.local.json`, so the demo accounts keep working if you turn it on: run `npm run demo:otp -- admin` and type the code, or add the printed setup key to Google Authenticator once. Re-running the seed keeps existing secrets and resets passwords, so it is safe to run again.
+
+To switch it from SQL instead (e.g. if you are locked out): `update private.security_settings set staff_mfa_required = true;` (or `false`). Turn it **on** before going live.
 
 If `store_manager` is missing (the `20261112000100_store_manager_role.sql` migration hasn't been applied to that project), the script uses `order_manager` for the manager account and tells you; apply migrations with `npx supabase db push` and run it again.
 

@@ -8,9 +8,9 @@
  * DEV / SANDBOX ONLY. Every account shares one well-known password, so never run
  * this against the production project.
  *
- * MFA stays mandatory for staff (RLS requires an aal2 session). Instead of
- * weakening that, the script enrols an authenticator (TOTP) factor for each staff
- * account itself and saves the secrets to .demo-users.local.json (git-ignored).
+ * Staff MFA is a switch (Admin → Settings → Security, off by default). So that
+ * it can be turned on at any time, the script still enrols an authenticator
+ * (TOTP) factor for each staff account itself and saves the secrets to .demo-users.local.json (git-ignored).
  * `npm run demo:otp -- admin` prints the current 6-digit code, or add the printed
  * secret to an authenticator app once.
  *
@@ -203,7 +203,7 @@ async function seed() {
     if (staffErr) throw staffErr;
 
     await ensureTotp(admin, user, acc, role, saved);
-    rows.push({ account: acc.key, email: acc.email, role, login: acc.loginPath, mfa: "TOTP (npm run demo:otp)" });
+    rows.push({ account: acc.key, email: acc.email, role, login: acc.loginPath, mfa: "off by default; TOTP ready (npm run demo:otp)" });
   }
 
   writeFileSync(DEMO_SECRETS_FILE, `${JSON.stringify(saved, null, 2)}\n`, { mode: 0o600 });
@@ -211,7 +211,8 @@ async function seed() {
   console.log(`\nDemo accounts ready on ${url}  (DEV / SANDBOX ONLY)\n`);
   console.table(rows.map((r) => ({ ...r, login: `${siteUrl}${r.login}` })));
   console.log(`Password for every account: ${password}\n`);
-  console.log("Staff sign-in asks for a 6-digit code. Get the current one with:");
+  console.log("Staff sign-in is password-only while two-step sign-in is off (Admin → Settings → Security).");
+  console.log("If it is switched on, get the current 6-digit code with:");
   console.log("  npm run demo:otp -- admin      (or owner | manager | staff | all)\n");
   console.log("Or add a secret to your authenticator app once (Google Authenticator → Enter a setup key):");
   for (const [key, f] of Object.entries(saved.factors)) console.log(`  ${key.padEnd(8)} ${f.secret}`);

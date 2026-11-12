@@ -256,12 +256,12 @@ test.describe("theme, settings, staff and audit (admin)", () => {
     await ip.getByRole("button", { name: "Accept invitation" }).click();
     await ip.getByLabel(/^New password/).fill("lettersonlypassword");
     await ip.getByLabel("Confirm password").fill("lettersonlypassword");
-    await ip.getByRole("button", { name: "Save password and set up MFA" }).click();
+    await ip.getByRole("button", { name: "Save password and continue" }).click();
     await expect(ip.locator("form").getByRole("alert")).toContainText("letters and numbers");
     const password = `Invitee-${randomUUID()}`;
     await ip.getByLabel(/^New password/).fill(password);
     await ip.getByLabel("Confirm password").fill(password);
-    await ip.getByRole("button", { name: "Save password and set up MFA" }).click();
+    await ip.getByRole("button", { name: "Save password and continue" }).click();
     await enrolMfa(ip);
     await ip.goto("/admin/orders");
     await expect(ip.getByRole("heading", { name: "Orders" })).toBeVisible();

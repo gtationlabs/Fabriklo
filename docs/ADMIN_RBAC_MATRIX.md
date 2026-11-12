@@ -1,6 +1,6 @@
 # Admin RBAC matrix
 
-Source of truth: `public.role_permissions` (seeded in `supabase/migrations/20261026000100_foundation_identity_rbac.sql`). Every permission additionally requires an **active** staff record and an **aal2 (MFA-verified)** session.
+Source of truth: `public.role_permissions` (seeded in `supabase/migrations/20261026000100_foundation_identity_rbac.sql`). Every permission additionally requires an **active** staff record and, while staff MFA is switched on (Admin → Settings → Security, default off), an **aal2 (MFA-verified)** session.
 
 | Permission | super_admin | admin | store mgr | catalog | inventory | orders | support | marketing | content | analyst |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |

@@ -36,7 +36,7 @@ export function WelcomeForm({ tokenHash, type }: { tokenHash: string; type: "inv
       </label>
       {error ? <p role="alert" className="rounded border border-danger/30 bg-danger/5 p-3 text-sm text-danger">{error}</p> : null}
       <button type="submit" disabled={saving} className="w-full rounded bg-espresso px-4 py-2 text-sm font-medium text-cream disabled:opacity-60">
-        {saving ? "Saving…" : "Save password and set up MFA"}
+        {saving ? "Saving…" : "Save password and continue"}
       </button>
     </form>
   );

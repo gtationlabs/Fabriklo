@@ -11,7 +11,7 @@ export function friendlyDbError(error: { code?: string; message?: string; hint?:
     case "42501":
       return /approval/.test(error.message ?? "")
         ? "This adjustment is above the large-adjustment threshold and needs approval permission."
-        : "You do not have permission to do that (or your MFA session expired).";
+        : "You do not have permission to do that (or your session expired).";
     case "23514":
       return "A value is outside the allowed range.";
     case "22023":

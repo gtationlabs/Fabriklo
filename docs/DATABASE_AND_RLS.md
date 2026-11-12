@@ -13,7 +13,7 @@ All migrations live in `supabase/migrations` and are applied with `npx supabase 
 
 | Function | Security | Callable by | Purpose |
 | --- | --- | --- | --- |
-| `private.has_permission(text)` | definer | authenticated (via policies) | Current staff role → permission, requires `aal2` |
+| `private.has_permission(text)` | definer | authenticated (via policies) | Current staff role → permission, requires `aal2` while `private.staff_mfa_required()` |
 | `private.is_super_admin()` | definer | authenticated | Used to restrict super-admin assignment |
 | `public.my_staff_context()` | definer | authenticated | UI menu data (cosmetic) |
 | `public.get_variant_availability(uuid[])` | definer | anon, authenticated | Available units for **published** variants only, capped at 99 |
