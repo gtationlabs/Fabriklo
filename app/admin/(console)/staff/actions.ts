@@ -21,7 +21,7 @@ import { createSupabaseServiceClient } from "@/lib/supabase/service";
  */
 export type StaffActionState = { ok: boolean; message: string | null; link?: string; values?: Record<string, string> };
 
-const ASSIGNABLE = ["admin", "catalog_manager", "inventory_manager", "order_manager", "support_agent", "marketing_manager", "content_editor", "analyst", "super_admin"] as const;
+const ASSIGNABLE = ["admin", "store_manager", "catalog_manager", "inventory_manager", "order_manager", "support_agent", "marketing_manager", "content_editor", "analyst", "super_admin"] as const;
 const inviteSchema = z.object({
   email: z.email().max(254),
   display_name: z.string().trim().min(2).max(120),
