@@ -24,7 +24,32 @@ npm run dev                 # http://localhost:3000
 npm run staff:create -- you@example.com super_admin
 ```
 
-Sign in at <http://localhost:3000/admin/login>; you'll enrol an authenticator app (TOTP) on first login. Roles: `super_admin, admin, catalog_manager, inventory_manager, order_manager, support_agent, marketing_manager, content_editor, analyst`.
+Sign in at <http://localhost:3000/admin/login>; you'll enrol an authenticator app (TOTP) on first login. Roles: `super_admin, admin, store_manager, catalog_manager, inventory_manager, order_manager, support_agent, marketing_manager, content_editor, analyst`.
+
+### Demo accounts for testing (DEV / SANDBOX ONLY)
+
+> ⚠️ These accounts share a **public** password. Create them only in a local or development Supabase project, never in production, and delete them before launch.
+
+```bash
+npm run seed:demo-users                    # local Supabase (127.0.0.1)
+npm run seed:demo-users -- --allow-remote  # a hosted DEV project (e.g. the one in your .env.local)
+npm run demo:otp -- admin                  # current 6-digit MFA code (owner | admin | manager | staff | all)
+npm run seed:demo-users -- --remove        # delete all demo accounts again
+```
+
+Password for every account: **`Fabriklo-Demo-2026!`** (override with `DEMO_USERS_PASSWORD=...`).
+
+| Account | Email | Role | Sign in at | What it can do |
+| --- | --- | --- | --- | --- |
+| Owner | `owner@demo.fabriklo.local` | `super_admin` | `/admin/login` | Everything, incl. security settings, integrations, super-admin assignment |
+| Admin | `admin@demo.fabriklo.local` | `admin` | `/admin/login` | Runs the store; no security settings or integration secrets |
+| Manager | `manager@demo.fabriklo.local` | `store_manager` | `/admin/login` | Products, stock, orders, risk, customers, analytics; no staff/settings/audit |
+| Staff | `staff@demo.fabriklo.local` | `support_agent` | `/admin/login` | Read-only orders, customers and products |
+| Customer | `customer@demo.fabriklo.local` | customer | `/account/login` | Storefront account with a saved Dhaka address; no admin access |
+
+**MFA:** the admin still requires a second factor for every staff role (enforced in the database, not just the UI), so the script enrols an authenticator for each staff account itself and stores the secrets in the git-ignored `.demo-users.local.json`. After entering the password, run `npm run demo:otp -- admin` and type the code, or add the printed setup key to Google Authenticator once. Re-running the seed keeps existing secrets and resets passwords, so it is safe to run again.
+
+If `store_manager` is missing (the `20261112000100_store_manager_role.sql` migration hasn't been applied to that project), the script uses `order_manager` for the manager account and tells you; apply migrations with `npx supabase db push` and run it again.
 
 ## Checks
 

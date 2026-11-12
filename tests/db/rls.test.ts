@@ -18,6 +18,7 @@ beforeAll(async () => {
   for (const role of [
     "super_admin",
     "admin",
+    "store_manager",
     "catalog_manager",
     "inventory_manager",
     "order_manager",
@@ -303,6 +304,26 @@ describe("staff RBAC and MFA", () => {
     });
     await as({ role: "authenticated", sub: staff.support_agent, aal: "aal2" }, async (sql) => {
       expect((await sql.query(`select * from public.orders where id = $1`, [orderForA])).length).toBe(1);
+    });
+  });
+
+  it("store manager runs operations but cannot manage staff, settings or the audit log", async () => {
+    const v = await oneVariant("p.status = 'active'");
+    await as({ role: "authenticated", sub: staff.store_manager, aal: "aal2" }, async (sql) => {
+      expect((await sql.query(`select * from public.orders where id = $1`, [orderForA])).length).toBe(1);
+      expect((await sql.query(`select * from public.variant_costs limit 1`)).length).toBe(1);
+      expect(
+        await sql.errorCode(
+          `select public.admin_adjust_stock($1, (select id from public.warehouses where is_default), 1, 'adjust', 'test', 'idem-store-manager-1')`,
+          [v.id],
+        ),
+      ).toBeNull();
+      expect(await sql.query(`select * from public.audit_events limit 1`)).toHaveLength(0);
+      const perms = await sql.query<{ permissions: string[] }>(`select public.my_staff_context() -> 'permissions' as permissions`);
+      const granted = perms[0].permissions;
+      for (const p of ["staff.manage", "settings.manage", "settings.security", "integrations.manage", "audit.read", "orders.refund"]) {
+        expect(granted).not.toContain(p);
+      }
     });
   });
 
